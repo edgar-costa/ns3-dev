@@ -1,0 +1,38 @@
+# -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
+
+# def options(opt):
+#     pass
+
+# def configure(conf):
+#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
+
+def build(bld):
+    module = bld.create_ns3_module('traffic-generation', ['core'])
+    module.source = [
+        'model/traffic-generation.cc',
+        'model/simple-send.cc',
+        'model/custom-bulk-application.cc',
+        'helper/custom-bulk-helper.cc',
+        'helper/traffic-generation-helper.cc',
+        ]
+
+    module_test = bld.create_ns3_module_test_library('traffic-generation')
+    module_test.source = [
+        'test/traffic-generation-test-suite.cc',
+        ]
+
+    headers = bld(features='ns3header')
+    headers.module = 'traffic-generation'
+    headers.source = [
+        'model/traffic-generation.h',
+        'model/simple-send.h',
+        'helper/custom-bulk-helper.h',
+        'model/custom-bulk-application.h',
+        'helper/traffic-generation-helper.h',
+        ]
+
+    if bld.env.ENABLE_EXAMPLES:
+        bld.recurse('examples')
+
+    # bld.ns3_python_bindings()
+
