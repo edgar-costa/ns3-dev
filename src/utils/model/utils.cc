@@ -304,6 +304,16 @@ void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links,
 				NetDeviceContainer interface = links[host_name.str() + "->" + router_name.str()];
 
 				//Get Device queues TODO: if we add RED queues.... this will not work....
+//
+//			  PointerValue p2p_queue;
+//			  interface.Get(0)->GetAttribute("TxQueue", p2p_queue);
+//			  Ptr<Queue<Packet>> queue_rx = p2p_queue.Get<Queue<Packet>>();
+//
+//			  PointerValue p2p_queue2;
+//			  interface.Get(1)->GetAttribute("TxQueue", p2p_queue2);
+//			  Ptr<Queue<Packet>> queue_tx = p2p_queue2.Get<Queue<Packet>>();
+
+				//ONLY THE FAT TREE WILL FIND THE INTERFACES
 				Ptr<Queue<Packet>> queue_rx = DynamicCast<PointToPointNetDevice>(interface.Get(0))->GetQueue();
 				Ptr<Queue<Packet>> queue_tx = DynamicCast<PointToPointNetDevice>(interface.Get(1))->GetQueue();
 
@@ -317,7 +327,8 @@ void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links,
 	}
 }
 
-  void MeasureInterfaceLoad(Ptr<Queue<Packet>> q, uint32_t previous_counter, double next_schedule, std::string name){
+
+void MeasureInterfaceLoad(Ptr<Queue<Packet>> q, uint32_t previous_counter, double next_schedule, std::string name){
 
 	uint32_t current_counter = q->GetTotalReceivedBytes();
 
@@ -329,11 +340,84 @@ void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links,
 }
 
 
+  //TRACE SINKS
+
+  void
+  CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
+  {
+  //  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << "\t" << newCwnd);
+    *stream->GetStream () << Simulator::Now ().GetSeconds () << " " << newCwnd << std::endl;
+  }
+
+   void
+  RxDropPcap (Ptr<PcapFileWrapper> file, Ptr<const Packet> packet)
+  {
+  //	Ptr<PcapFileWrapper> file OLD VERSION
+    //NS_LOG_UNCOND ("RxDrop at " << Simulator::Now ().GetSeconds ());
+
+    file->Write (Simulator::Now (), packet);
+  }
+
+   void
+  RxDropAscii (Ptr<OutputStreamWrapper> file, Ptr<const Packet> packet)
+  {
+  //	Ptr<PcapFileWrapper> file OLD VERSION
+    //NS_LOG_UNCOND ("RxDrop at " << Simulator::Now ().GetSeconds ());
+
+  	Ptr<Packet> p = packet->Copy();
+
+  	PppHeader ppp_header;
+  	p->RemoveHeader(ppp_header);
+
+  	Ipv4Header ip_header;
+  	p->RemoveHeader(ip_header);
+
+
+    std::ostringstream oss;
+    oss << Simulator::Now().GetSeconds() << " "
+    		<< ip_header.GetSource() << " "
+        << ip_header.GetDestination() << " "
+        << int(ip_header.GetProtocol()) << " ";
+
+  	if (ip_header.GetProtocol() == uint8_t(17)){ //udp
+      UdpHeader udpHeader;
+      p->PeekHeader(udpHeader);
+      oss << int(udpHeader.GetSourcePort()) << " "
+          << int(udpHeader.GetDestinationPort()) << " ";
+
+  	}
+  	else if (ip_header.GetProtocol() == uint8_t(6)) {//tcp
+      TcpHeader tcpHeader;
+      p->PeekHeader(tcpHeader);
+      oss << int(tcpHeader.GetSourcePort()) << " "
+          << int(tcpHeader.GetDestinationPort()) << " ";
+  	}
+
+  	oss << packet->GetSize() << "\n";
+  	*(file->GetStream()) << oss.str();
+    (file->GetStream())->flush();
+
+  //  file->Write (Simulator::Now (), p);
+  }
+
+  void
+  TxDrop (std::string s, Ptr<const Packet> p){
+  	static int counter = 0;
+  	NS_LOG_UNCOND (counter++ << " " << s << " at " << Simulator::Now ().GetSeconds ()) ;
+  }
 
 
 void printNow(double delay){
 	NS_LOG_UNCOND("\nSimulation Time: " << Simulator::Now().GetSeconds() << "\n");
 	Simulator::Schedule (Seconds(delay), &printNow, delay);
+}
+
+void PrintQueueSize(Ptr<Queue<Packet>> q){
+	uint32_t size = q->GetNPackets();
+	if (size > 0){
+		NS_LOG_UNCOND(Simulator::Now().GetSeconds() << " " <<  size);
+	}
+	Simulator::Schedule(Seconds(0.001), &PrintQueueSize, q);
 }
 
 }
