@@ -46,80 +46,6 @@ std::string script_name = file_name;
 int counter = 0;
 
 
-////TRACE SINKS
-//
-//static void
-//CwndChange (Ptr<OutputStreamWrapper> stream, uint32_t oldCwnd, uint32_t newCwnd)
-//{
-////  NS_LOG_UNCOND (Simulator::Now ().GetSeconds () << "\t" << newCwnd);
-//  *stream->GetStream () << Simulator::Now ().GetSeconds () << " " << newCwnd << std::endl;
-//}
-//
-//static void
-//RxDropPcap (Ptr<PcapFileWrapper> file, Ptr<const Packet> packet)
-//{
-////	Ptr<PcapFileWrapper> file OLD VERSION
-//  //NS_LOG_UNCOND ("RxDrop at " << Simulator::Now ().GetSeconds ());
-//
-//  file->Write (Simulator::Now (), packet);
-//}
-//
-//static void
-//RxDropAscii (Ptr<OutputStreamWrapper> file, Ptr<const Packet> packet)
-//{
-////	Ptr<PcapFileWrapper> file OLD VERSION
-//  //NS_LOG_UNCOND ("RxDrop at " << Simulator::Now ().GetSeconds ());
-//
-//	Ptr<Packet> p = packet->Copy();
-//
-//	PppHeader ppp_header;
-//	p->RemoveHeader(ppp_header);
-//
-//	Ipv4Header ip_header;
-//	p->RemoveHeader(ip_header);
-//
-//
-//  std::ostringstream oss;
-//  oss << Simulator::Now().GetSeconds() << " "
-//  		<< ip_header.GetSource() << " "
-//      << ip_header.GetDestination() << " "
-//      << int(ip_header.GetProtocol()) << " ";
-//
-//	if (ip_header.GetProtocol() == uint8_t(17)){ //udp
-//    UdpHeader udpHeader;
-//    p->PeekHeader(udpHeader);
-//    oss << int(udpHeader.GetSourcePort()) << " "
-//        << int(udpHeader.GetDestinationPort()) << " ";
-//
-//	}
-//	else if (ip_header.GetProtocol() == uint8_t(6)) {//tcp
-//    TcpHeader tcpHeader;
-//    p->PeekHeader(tcpHeader);
-//    oss << int(tcpHeader.GetSourcePort()) << " "
-//        << int(tcpHeader.GetDestinationPort()) << " ";
-//	}
-//
-//	oss << packet->GetSize() << "\n";
-//	*(file->GetStream()) << oss.str();
-//  (file->GetStream())->flush();
-//
-////  file->Write (Simulator::Now (), p);
-//}
-//
-//static void
-//TxDrop (std::string s, Ptr<const Packet> p){
-//	static int counter = 0;
-//	NS_LOG_UNCOND (counter++ << " " << s << " at " << Simulator::Now ().GetSeconds ()) ;
-//}
-//
-//void PrintQueueSize(Ptr<Queue<Packet>> q){
-//	uint32_t size = q->GetNPackets();
-//	if (size > 0){
-//		NS_LOG_UNCOND(Simulator::Now().GetSeconds() << " " <<  size);
-//	}
-//	Simulator::Schedule(Seconds(0.001), &PrintQueueSize, q);
-//}
-
 
 int
 main (int argc, char *argv[])
@@ -269,8 +195,8 @@ main (int argc, char *argv[])
 
 
 	//Tcp Socket (general socket conf)
-//  Config::SetDefault("ns3::TcpSocket::SndBufSize", UintegerValue(1500000000));
-//  Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(1500000000));
+  Config::SetDefault("ns3::TcpSocket::SndBufSize", UintegerValue(4194240));
+  Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(4194240));
 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1446)); //MTU
 	Config::SetDefault ("ns3::TcpSocket::InitialSlowStartThreshold", UintegerValue(4294967295));
 	Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue(1));

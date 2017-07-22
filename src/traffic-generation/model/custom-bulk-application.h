@@ -111,6 +111,10 @@ public:
   uint32_t GetTxBufferSize(void);
 
   void SetOutputFile(Ptr<OutputStreamWrapper> file);
+  void SetStartRecordingTime(double * startTime);
+  void SetRecordedFlowsCounter(uint64_t * recordedFlowsCounter);
+
+  void SetRecordingTime(double recordingTime);
 
 protected:
   virtual void DoDispose (void);
@@ -135,7 +139,14 @@ private:
   uint64_t        m_flowId;       //!<Id to identificate flows with other runs
   bool 						m_started;
 
+  //Added attributes
   Ptr<OutputStreamWrapper> m_outputFile;
+  double * m_startRecordingTime;
+  uint64_t * m_recordedFlowsCounter;
+  //Recording time will be initialized at -1, and if it is not set to anything it will not be taken into account
+  double   m_recordingTime;
+  bool     m_insideIntervalFlow;
+
 
   /// Traced Callback: sent packets
   TracedCallback<Ptr<const Packet> > m_txTrace;

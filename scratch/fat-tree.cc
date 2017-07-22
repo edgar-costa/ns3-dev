@@ -84,6 +84,7 @@ main (int argc, char *argv[])
 	uint32_t minRTO = rtt*1.5;
 
   int64_t flowlet_gap = rtt;
+  double flowlet_gap_scaling = 1;
 
 
   bool animation = false;
@@ -125,6 +126,7 @@ main (int argc, char *argv[])
 	cmd.AddValue("InterArrivalFlowTime", "flows we start per second", interArrivalFlowsTime);
 	cmd.AddValue("SizeDistribution", "File with the flows size distribution", sizeDistributionFile);
   cmd.AddValue("QueueSize", "Interfaces Queue length", queue_size);
+  cmd.AddValue("FlowletGapScaling", "Inter-arrival packet time for flowlet expiration", flowlet_gap_scaling);
   cmd.AddValue("FlowletGap", "Inter-arrival packet time for flowlet expiration", flowlet_gap);
   cmd.AddValue("K", "Fat tree size", k);
   cmd.AddValue("RunStep", "Random generator starts at", runStep);
@@ -139,8 +141,12 @@ main (int argc, char *argv[])
 //		LogComponentEnable("Ipv4GlobalRouting", LOG_DEBUG);
 		//LogComponentEnable("Ipv4GlobalRouting", LOG_ERROR);
 		LogComponentEnable("fat-tree", LOG_ERROR);
-		LogComponentEnable("utils", LOG_ERROR);
+		LogComponentEnable("utils", LOG_DEBUG);
 		LogComponentEnable("traffic-generation", LOG_DEBUG);
+		LogComponentEnable("custom-bulk-app", LOG_DEBUG);
+		//LogComponentEnable("PacketSink", LOG_ALL);
+		//LogComponentEnable("TcpSocketBase", LOG_ALL);
+
 	}
 
   //Update root name
@@ -155,48 +161,83 @@ main (int argc, char *argv[])
   //General default configurations
   //putting 1500bytes into the wire
   double packetDelay = double(1500*8)/DataRate(linkBandiwdth).GetBitRate();
-	rtt = 12*delay + (12*Seconds(packetDelay).GetMicroSeconds());
+	double small_packetDelay = double(58*8)/DataRate(linkBandiwdth).GetBitRate();
 
-	packetDelay = double(58*8)/DataRate(linkBandiwdth).GetBitRate();
+	rtt = 12*delay + (6*Seconds(packetDelay).GetMicroSeconds()) + (6*Seconds(small_packetDelay).GetMicroSeconds());
+
 	int small_rtt = 12*delay + (12*Seconds(packetDelay).GetMicroSeconds());
 
 	minRTO = rtt*2;
 
-  flowlet_gap = rtt/2; //milliseconds
+  flowlet_gap = rtt*flowlet_gap_scaling; //milliseconds
 
-  //Routing
-  Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue(ecmpMode));
-  Config::SetDefault ("ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", BooleanValue (true));
-  Config::SetDefault("ns3::Ipv4GlobalRouting::FlowletGap", IntegerValue(MicroSeconds(flowlet_gap).GetNanoSeconds()));
+
+  NS_LOG_UNCOND("rtt: " << rtt << " minRTO: " << minRTO << " flowlet_gap: " << flowlet_gap
+   		<< " delay: " << delay << " packetDelay: " << Seconds(packetDelay).GetMicroSeconds()
+ 			<< "small_rtt: "<< small_rtt <<" Flowlet gap:" << flowlet_gap << " Microseconds");
 
   //TCP
-  NS_LOG_UNCOND("rtt: " << rtt << " minRTO: " << minRTO << " flowlet_gap: " << flowlet_gap
-  		<< " delay: " << delay << " packetDelay: " << Seconds(packetDelay).GetMicroSeconds() << "small_rtt: "<< small_rtt << " Microseconds");
 
-//  Config::SetDefault("ns3::TcpSocket::SndBufSize", UintegerValue(1500000000));
-//  Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(1500000000));
+  //GLOBAL CONFIGURATION
 
-	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-	Config::SetDefault ("ns3::RttEstimator::InitialEstimation", TimeValue(MicroSeconds(rtt)));
+   //Routing
+   Config::SetDefault("ns3::Ipv4GlobalRouting::EcmpMode", StringValue(ecmpMode));
+   Config::SetDefault ("ns3::Ipv4GlobalRouting::RespondToInterfaceEvents", BooleanValue (true));
 
-	Config::SetDefault ("ns3::TcpSocketBase::MinRto",TimeValue(MicroSeconds(minRTO))); //min RTO value that can be set
-	Config::SetDefault ("ns3::TcpSocketBase::MaxSegLifetime",DoubleValue(120));
-  Config::SetDefault ("ns3::TcpSocketBase::ReTxThreshold", UintegerValue(10)); //same than DupAckThreshold
-  Config::SetDefault ("ns3::TcpSocketBase::ClockGranularity", TimeValue(MicroSeconds(5)));
+   //Flowlet Switching
+   Config::SetDefault("ns3::Ipv4GlobalRouting::FlowletGap", IntegerValue(MicroSeconds(flowlet_gap).GetNanoSeconds()));
 
-	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1446)); //MTU
-	Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (10)); //retranmissions
-	Config::SetDefault ("ns3::TcpSocket::ConnCount",UintegerValue(10)); //retrnamissions during connection
-	//Can be much slower than my rtt because packet size of syn is 60bytes
-	Config::SetDefault ("ns3::TcpSocket::ConnTimeout",TimeValue(MicroSeconds(4*small_rtt))); // connection retransmission timeout
+   //Dirll LB
+   Config::SetDefault("ns3::Ipv4GlobalRouting::DrillRandomChecks", UintegerValue(2));
+   Config::SetDefault("ns3::Ipv4GlobalRouting::DrillMemoryUnits", UintegerValue(1));
 
 
-	Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue(MicroSeconds(2*rtt)));
-	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue(2));
+ 	//Tcp Socket (general socket conf)
+//   Config::SetDefault("ns3::TcpSocket::SndBufSize", UintegerValue(1500000));
+//   Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(1500000));
+ 	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1446)); //MTU
+ 	Config::SetDefault ("ns3::TcpSocket::InitialSlowStartThreshold", UintegerValue(4294967295));
+ 	Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue(1));
+ 	//Can be much slower than my rtt because packet size of syn is 60bytes
+ 	Config::SetDefault ("ns3::TcpSocket::ConnTimeout",TimeValue(MicroSeconds(10*small_rtt))); // connection retransmission timeout
+ 	Config::SetDefault ("ns3::TcpSocket::ConnCount",UintegerValue(10)); //retrnamissions during connection
+ 	Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (10)); //retranmissions
+ 	Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue(MicroSeconds(rtt)));
+ 	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue(2));
+ 	Config::SetDefault ("ns3::TcpSocket::TcpNoDelay", BooleanValue(true)); //disable nagle's algorithm
+ 	Config::SetDefault ("ns3::TcpSocket::PersistTimeout", TimeValue(NanoSeconds(6000000000))); //persist timeout to porbe for rx window
 
-	Config::SetDefault ("ns3::TcpSocket::InitialSlowStartThreshold", UintegerValue(4294967295));
-	Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue(1));
-	Config::SetDefault ("ns3::TcpSocket::TcpNoDelay", BooleanValue(true)); //disable nagle's algorithm
+ 	//Tcp Socket Base: provides connection orientation, sliding window, flow control; congestion control is delegated to the subclasses (i.e new reno)
+
+ 	Config::SetDefault ("ns3::TcpSocketBase::MaxSegLifetime",DoubleValue(10));
+ //	Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue(true)); //enable sack
+ 	Config::SetDefault ("ns3::TcpSocketBase::MinRto",TimeValue(MicroSeconds(minRTO))); //min RTO value that can be set
+   Config::SetDefault ("ns3::TcpSocketBase::ClockGranularity", TimeValue(MicroSeconds(1)));
+   Config::SetDefault ("ns3::TcpSocketBase::ReTxThreshold", UintegerValue(3)); //same than DupAckThreshold
+ //	Config::SetDefault ("ns3::TcpSocketBase::LimitedTransmit",BooleanValue(true)); //enable sack
+
+ 	//TCP L4
+ 	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
+ 	Config::SetDefault ("ns3::RttEstimator::InitialEstimation", TimeValue(MicroSeconds(rtt)));
+
+ 	//QUEUES
+ 	//PFIFO
+ 	Config::SetDefault ("ns3::PfifoFastQueueDisc::Limit", UintegerValue (queue_size));
+
+ 	//RED configuration
+  //Config::SetDefault ("ns3::RedQueueDisc::Mode", StringValue ("QUEUE_MODE_BYTES"));
+  // Config::SetDefault ("ns3::RedQueueDisc::MeanPktSize", UintegerValue (1000));
+  //Config::SetDefault ("ns3::RedQueueDisc::Wait", BooleanValue (true));
+  //Config::SetDefault ("ns3::RedQueueDisc::Gentle", BooleanValue (true));
+  //Config::SetDefault ("ns3::RedQueueDisc::QW", DoubleValue (0.005));
+  //Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (25));
+  //Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (50));
+  //Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (queue_size*1500));
+
+
+   TrafficControlHelper tchRed;
+   tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", DataRateValue (DataRate (linkBandiwdth)),
+                            "LinkDelay", TimeValue(MicroSeconds(delay)));
 
 
 
@@ -223,8 +264,10 @@ main (int argc, char *argv[])
   csma.SetChannelAttribute ("Delay", TimeValue (MicroSeconds(delay)));
   csma.SetDeviceAttribute("Mtu", UintegerValue(1500));
 
+  csma.SetQueue("ns3::DropTailQueue", "Mode", StringValue("QUEUE_MODE_PACKETS"));
+//  csma.SetQueue("ns3::DropTailQueue", "Mode", EnumValue(DropTailQueue::QUEUE_MODE_BYTES));
+//  csma.SetQueue("ns3::DropTailQueue", "MaxBytes", UintegerValue(queue_size*1500));
   csma.SetQueue("ns3::DropTailQueue", "MaxPackets", UintegerValue(queue_size));
-
 
   //Compute Fat Tree Devices
 
@@ -429,6 +472,9 @@ main (int argc, char *argv[])
 
 //START TRAFFIC
 
+  //Special variables for interval tests.
+  double recordStartTime = 0;
+  double recordingTime = 1;
 
 //  //Prepare sink app
   std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(hosts, 2000, 1000 , protocol);
@@ -440,11 +486,31 @@ main (int argc, char *argv[])
 //
 
   if (trafficPattern == "distribution"){
-  	sendFromDistribution(hosts, hostToPort, k , flowsCompletionTime, sizeDistributionFile,runStep, interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime);
+  	sendFromDistribution(hosts, hostToPort, k , flowsCompletionTime, sizeDistributionFile,runStep,
+  			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime);
   }
   else if( trafficPattern == "stride"){
-	  startStride(hosts, hostToPort, BytesFromRate(DataRate("10Mbps"), 5), 1, 4,flowsCompletionTime);
+	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 50), 1, 4 ,flowsCompletionTime);
   }
+
+  //Fill a structure with linkName->previousCounter
+  std::unordered_map<std::string, double> linkToPreviousLoad;
+
+  for(auto it = links.begin(); it != links.end(); it++){
+  	std::size_t found = it->first.find('h');
+  	if  (found != std::string::npos){
+  		linkToPreviousLoad[it->first + "_rx"] = 0;
+  		linkToPreviousLoad[it->first + "_tx"] = 0;
+
+  	}
+  }
+
+  network_load load_data;
+  load_data.stopThreshold = 0.8;
+  load_data.startTime = &recordStartTime;
+
+  MeasureInOutLoad(links, linkToPreviousLoad, uint32_t(k) ,linkBandiwdth, 1, load_data);
+
 
   //////////////////
   //TRACES
@@ -473,7 +539,7 @@ main (int argc, char *argv[])
 //  n0n1.Get (0)->TraceConnectWithoutContext ("PhyTxDrop", MakeBoundCallback (&TxDrop, "PhyTxDrop"));
 //  n0n1.Get (0)->TraceConnectWithoutContext ("MacTxDrop", MakeBoundCallback (&TxDrop, "MacTxDrop" ));
 
-  	links["h_0_0->r_0_e0"].Get (0)->TraceConnectWithoutContext ("MacTx", MakeBoundCallback (&TxDrop, "MacTx h_0_0"));
+//  	links["h_0_0->r_0_e0"].Get (0)->TraceConnectWithoutContext ("MacTx", MakeBoundCallback (&TxDrop, "MacTx h_0_0"));
   //links["h_0_1->r_0_e0"].Get (0)->TraceConnectWithoutContext ("MacTx", MakeBoundCallback (&TxDrop, "MacTx h_0_1"));
 
 //
@@ -558,7 +624,7 @@ main (int argc, char *argv[])
   	flowMonitor = flowHelper.InstallAll ();
   }
 
-  //Simulator::Schedule(Seconds(1), &printNow, 0.5);
+  Simulator::Schedule(Seconds(1), &printNow, 1);
 
   Simulator::Stop (Seconds (300));
   Simulator::Run ();

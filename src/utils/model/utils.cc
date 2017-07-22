@@ -48,7 +48,7 @@ GetNodeIp(std::string node_name)
 uint64_t BytesFromRate(DataRate dataRate, double time){
 
 		double bytes = ((double)dataRate.GetBitRate()/8) * time;
-		NS_LOG_DEBUG("Bytes to send: " << bytes);
+		//NS_LOG_DEBUG("Bytes to send: " << bytes);
 		return bytes;
 }
 
@@ -287,10 +287,16 @@ allocateNodesFatTree(int k){
 }
 
 //Just works for a fat tree.
-void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links, uint32_t k , double next_schedule){
+void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links, std::unordered_map<std::string, double> linkToPreviousLoad,
+		uint32_t k , DataRate linkBandwidth, double next_schedule, network_load load_data){
 
 	std::stringstream host_name;
 	std::stringstream router_name;
+
+	double sum_of_capacities = 0;
+	double current_total_load = 0;
+	double capacity_difference = 0;
+	int interfaces_count = 0;
 
 	for (uint32_t pod = 0; pod < k; pod++){
 		for (uint32_t edge_i = 0; edge_i < k/2; edge_i++){
@@ -317,26 +323,74 @@ void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links,
 				Ptr<Queue<Packet>> queue_rx = DynamicCast<PointToPointNetDevice>(interface.Get(0))->GetQueue();
 				Ptr<Queue<Packet>> queue_tx = DynamicCast<PointToPointNetDevice>(interface.Get(1))->GetQueue();
 
-				MeasureInterfaceLoad(queue_rx, 0, next_schedule, host_name.str() + "_rx");
-				MeasureInterfaceLoad(queue_tx, 0, next_schedule, host_name.str() + "_tx");
+				//RX Link
+				current_total_load =MeasureInterfaceLoad(queue_rx,
+						next_schedule, host_name.str() + "_rx", linkBandwidth);
+
+				capacity_difference= current_total_load - linkToPreviousLoad[host_name.str() + "->" + router_name.str() + "_rx"];
+				linkToPreviousLoad[host_name.str() + "->" + router_name.str() + "_rx"] = current_total_load;
+
+				//Ignore counter warps
+				if (capacity_difference < 0){
+					capacity_difference = current_total_load;
+				}
+				sum_of_capacities += capacity_difference;
+
+
+				//TX Link
+				current_total_load =MeasureInterfaceLoad(queue_tx,
+						next_schedule, host_name.str() + "_tx", linkBandwidth);
+
+				capacity_difference= current_total_load - linkToPreviousLoad[host_name.str() + "->" + router_name.str() + "_tx"];
+				linkToPreviousLoad[host_name.str() + "->" + router_name.str() + "_tx"] = current_total_load;
+
+				//wrap
+				if (capacity_difference < 0){
+					capacity_difference = current_total_load;
+				}
+				sum_of_capacities += capacity_difference;
+
+				interfaces_count +=2;
 
 				host_name.str("");
 				router_name.str("");
 			}
 		}
 	}
+
+	//compute average network usage
+	double average_usage = sum_of_capacities / interfaces_count;
+
+	NS_LOG_UNCOND("Netowork Load: " <<  " " << average_usage);
+
+	if (average_usage >= load_data.stopThreshold)
+	{
+		double now = Simulator::Now().GetSeconds();
+		*(load_data.startTime) = now;
+		NS_LOG_DEBUG("Above threshold");
+		return;
+	}
+	else
+	{
+		//Reschedule the function until it reaches a certain load
+		Simulator::Schedule(Seconds(next_schedule), &MeasureInOutLoad, links,linkToPreviousLoad, k,
+				linkBandwidth, next_schedule, load_data);
+	}
 }
 
 
-void MeasureInterfaceLoad(Ptr<Queue<Packet>> q, uint32_t previous_counter, double next_schedule, std::string name){
+double MeasureInterfaceLoad(Ptr<Queue<Packet>> q,  double next_schedule, std::string name, DataRate linkBandwidth){
 
 	uint32_t current_counter = q->GetTotalReceivedBytes();
 
-	uint32_t difference = current_counter - previous_counter;
+	double total_load = double(current_counter)/BytesFromRate(DataRate(linkBandwidth), next_schedule);
 
-	NS_LOG_UNCOND(name <<  " " <<  double(difference)/BytesFromRate(DataRate("10Mbps"), next_schedule));
+	NS_LOG_DEBUG(name <<  " " <<  total_load);
 
-	Simulator::Schedule(Seconds(next_schedule), &MeasureInterfaceLoad, q, current_counter, next_schedule, name);
+
+//	Simulator::Schedule(Seconds(next_schedule), &MeasureInterfaceLoad, q, current_counter, next_schedule, name);
+
+	return total_load;
 }
 
 
