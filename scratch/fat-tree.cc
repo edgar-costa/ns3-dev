@@ -478,7 +478,7 @@ main (int argc, char *argv[])
   uint64_t recordedFlowsCounter = 0;
 
 //  //Prepare sink app
-  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(hosts, 2000, 1000 , protocol);
+  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(hosts, 20, 1000 , protocol);
 
   Ptr<OutputStreamWrapper> flowsCompletionTime = asciiTraceHelper.CreateFileStream (outputNameFct);
 

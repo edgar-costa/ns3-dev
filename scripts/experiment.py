@@ -7,6 +7,8 @@ tests = ["ECMP_RANDOM_FLOWLET", "ECMP_PER_FLOW", "ECMP_DRILL"]
 errors = [0, 0.001, 0.01, 0.05, 0.1]
 
 
+
+
 parser = argparse.ArgumentParser()
 group = parser.add_mutually_exclusive_group()
 
@@ -50,10 +52,13 @@ for test in tests:
         formated_cmd = cmd.format(error, test, output_name_ns3, args.RunStep, args.Bandwidth,
                                    args.SimulationTime, args.InterArrival, args.Distribution)
 
+        print formated_cmd
+
         subprocess.call(formated_cmd,shell=True)
         if first:
             first = False
             time.sleep(20)
+            break
         else:
             time.sleep(2)
-
+    break
