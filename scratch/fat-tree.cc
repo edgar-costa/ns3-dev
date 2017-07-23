@@ -475,6 +475,7 @@ main (int argc, char *argv[])
   //Special variables for interval tests.
   double recordStartTime = 0;
   double recordingTime = 1;
+  uint64_t recordedFlowsCounter = 0;
 
 //  //Prepare sink app
   std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(hosts, 2000, 1000 , protocol);
@@ -487,10 +488,10 @@ main (int argc, char *argv[])
 
   if (trafficPattern == "distribution"){
   	sendFromDistribution(hosts, hostToPort, k , flowsCompletionTime, sizeDistributionFile,runStep,
-  			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime);
+  			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime, &recordedFlowsCounter);
   }
   else if( trafficPattern == "stride"){
-	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 50), 1, 4 ,flowsCompletionTime);
+	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 5), 1, 4 ,flowsCompletionTime);
   }
 
   //Fill a structure with linkName->previousCounter
@@ -506,10 +507,10 @@ main (int argc, char *argv[])
   }
 
   network_load load_data;
-  load_data.stopThreshold = 0.8;
+  load_data.stopThreshold = 0.7;
   load_data.startTime = &recordStartTime;
 
-  MeasureInOutLoad(links, linkToPreviousLoad, uint32_t(k) ,linkBandiwdth, 1, load_data);
+  MeasureInOutLoad(links, linkToPreviousLoad, uint32_t(k) ,linkBandiwdth, 0.25, load_data);
 
 
   //////////////////
@@ -549,8 +550,8 @@ main (int argc, char *argv[])
 
 //  	csma.EnablePcapAll(outputNameRoot, true);
 
-  csma.EnablePcap(outputNameFct, links["h_0_0->r_0_e0"].Get(0), bool(1));
-  csma.EnablePcap(outputNameFct, links["h_3_1->r_3_e0"].Get(0), bool(1));
+//  csma.EnablePcap(outputNameFct, links["h_0_0->r_0_e0"].Get(0), bool(1));
+//  csma.EnablePcap(outputNameFct, links["h_3_1->r_3_e0"].Get(0), bool(1));
 
 //  csma.EnablePcap(outputNameFct, links["h_0_1->r_0_e0"].Get(0), bool(1));
 //  csma.EnablePcap(outputNameFct, links["h_0_2->r_0_e1"].Get(0), bool(1));
@@ -624,9 +625,9 @@ main (int argc, char *argv[])
   	flowMonitor = flowHelper.InstallAll ();
   }
 
-  Simulator::Schedule(Seconds(1), &printNow, 1);
+//  Simulator::Schedule(Seconds(1), &printNow, 1);
 
-  Simulator::Stop (Seconds (300));
+  Simulator::Stop (Seconds (500));
   Simulator::Run ();
 
 

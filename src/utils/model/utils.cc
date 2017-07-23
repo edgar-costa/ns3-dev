@@ -367,7 +367,7 @@ void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links,
 	{
 		double now = Simulator::Now().GetSeconds();
 		*(load_data.startTime) = now;
-		NS_LOG_DEBUG("Above threshold");
+		NS_LOG_DEBUG("Above threshold: Account Flows From: " << now);
 		return;
 	}
 	else
@@ -385,7 +385,7 @@ double MeasureInterfaceLoad(Ptr<Queue<Packet>> q,  double next_schedule, std::st
 
 	double total_load = double(current_counter)/BytesFromRate(DataRate(linkBandwidth), next_schedule);
 
-	NS_LOG_DEBUG(name <<  " " <<  total_load);
+//	NS_LOG_DEBUG(name <<  " " <<  total_load);
 
 
 //	Simulator::Schedule(Seconds(next_schedule), &MeasureInterfaceLoad, q, current_counter, next_schedule, name);

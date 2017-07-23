@@ -302,6 +302,9 @@ public:
 class TcpSocketBase : public TcpSocket
 {
 public:
+
+	void SendRST_c (void);
+
   /**
    * Get the type ID.
    * \brief Get the type ID.

@@ -184,15 +184,17 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
       m_startTime  = Simulator::Now().GetSeconds();
 
       //if recording time was set
-      if (m_startRecordingTime > 0 && m_recordingTime != -1){
+      if (m_startRecordingTime != NULL){
+				if (*m_startRecordingTime > 0 && m_recordingTime != -1){
 
-      	//Check if the flow is contained in the period we are interested in
-      	if (m_startTime >= m_startRecordingTime && m_startTime <= (m_startRecordingTime + m_recordingTime)){
-      		//Increase counter by one
-      		*m_recordedFlowsCounter +=1;
-      		m_trackedFlow = true;
-      	}
+					//Check if the flow is contained in the period we are interested in
+					if (m_startTime >= *m_startRecordingTime && m_startTime <= (*m_startRecordingTime + m_recordingTime)){
+						//Increase counter by one
+						*m_recordedFlowsCounter +=1;
+						m_insideIntervalFlow = true;
+					}
 
+				}
       }
 
       m_socket->Connect (m_peer);
@@ -271,9 +273,9 @@ void CustomBulkApplication::SendData (void)
 
 //    	uint32_t availableBuffer = m_socket->GetTxAvailable();
 
-//  	  DynamicCast<TcpSocketBase>(m_socket)->SendRST_c();
+  	  DynamicCast<TcpSocketBase>(m_socket)->SendRST_c();
 
-			m_socket->Close ();
+//			m_socket->Close ();
 
 //  		m_socket->ShutdownSend();
       m_connected = false;
@@ -284,11 +286,12 @@ void CustomBulkApplication::SendData (void)
       Ipv4Address srcAddr = GetNodeIp(m_socket->GetNode());
       InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
 
-      NS_LOG_DEBUG("Flow Duration (" << srcName << " " << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort()  << ") "  <<  (endTime-m_startTime)
-      		<< " Seconds" << " " << "SimulationTime: " << Simulator::Now().GetSeconds() << " " << "Flow Size: " << m_maxBytes);
+//      NS_LOG_DEBUG("Flow Duration (" << srcName << " " << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort()  << ") "  <<  (endTime-m_startTime)
+//      		<< " Seconds" << " " << "SimulationTime: " << Simulator::Now().GetSeconds() << " " << "Flow Size: " << m_maxBytes);
 
       if (m_insideIntervalFlow){
-      	*m_recordedFlowsCounter -=1;
+      	*m_recordedFlowsCounter = (*m_recordedFlowsCounter) -1;
+//      	NS_LOG_UNCOND("Counter value at: "<< *m_recordedFlowsCounter);
 
 							//create 5 tuple
 				std::ostringstream flowIdentification;
@@ -302,10 +305,10 @@ void CustomBulkApplication::SendData (void)
 
 				//If flows counter is 0 we will decide to stop the simulation, but only if the flow has finished outside the simulation window
 				//IMPORTANT there is a small provability of never terminate the simulation
-				if (*m_recordedFlowsCounter == 0 && endTime > (m_startRecordingTime + m_recordingTime)){
+				if (*m_recordedFlowsCounter == 0 && endTime > (*m_startRecordingTime + m_recordingTime)){
 					//Stop simulation
 					NS_LOG_UNCOND("Flows inside the period finished, stopping simulation...");
-					Simulator::Stop(0);
+					Simulator::Stop(Seconds(0));
 
       }
       //In this case we record all flows

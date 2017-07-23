@@ -29,7 +29,8 @@ void startRandom(NodeContainer hosts, std::unordered_map <std::string, std::vect
 
 void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts,
 		uint16_t k, Ptr<OutputStreamWrapper> fctFile, std::string distributionFile,uint32_t seed,
-		uint32_t interArrivalFlow, double sameNetProb, double interPodProb, double simulationTime, double *startRecordingTime, double recordingTime);
+		uint32_t interArrivalFlow, double sameNetProb, double interPodProb, double simulationTime, double *startRecordingTime,
+		double recordingTime, uint64_t * recordedFlowsCounter);
 
 }
 

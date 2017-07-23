@@ -2472,6 +2472,12 @@ TcpSocketBase::SendRST (void)
   DeallocateEndPoint ();
 }
 
+void
+TcpSocketBase::SendRST_c (void)
+{
+	SendRST();
+}
+
 /* Deallocate the end point and cancel all the timers */
 void
 TcpSocketBase::DeallocateEndPoint (void)
