@@ -58,7 +58,7 @@ for test in tests:
         if first:
             first = False
             time.sleep(20)
-            break
+
         else:
             time.sleep(2)
-    break
+
