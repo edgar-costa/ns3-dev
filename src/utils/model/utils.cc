@@ -468,7 +468,7 @@ void printNow(double delay){
 
 void saveNow(double delay, Ptr<OutputStreamWrapper> file){
 
-	*(file->GetStream()) << Simulator::Now().GetSeconds() << "/n";
+	*(file->GetStream()) << Simulator::Now().GetSeconds() << "\n";
 	(file->GetStream())->flush();
 
 	Simulator::Schedule (Seconds(delay), &saveNow, delay, file);
