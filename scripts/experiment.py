@@ -4,7 +4,7 @@ import argparse
 import os, errno
 
 tests = ["ECMP_RANDOM_FLOWLET", "ECMP_PER_FLOW", "ECMP_DRILL"]
-errors = [0, 0.001, 0.01, 0.05, 0.1]
+errors = [0, 0.01, 0.1]
 
 
 parser = argparse.ArgumentParser()
