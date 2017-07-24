@@ -153,8 +153,8 @@ main (int argc, char *argv[])
 	std::ostringstream run;
 	run << runStep;
 
-  outputNameRoot = outputNameRoot + outputFolder + "/" + fileNameRoot;
-  outputNameFct = outputNameRoot + "-" +  simulationName + "_" +  std::string(run.str()) + ".fct";
+  outputNameRoot = outputNameRoot + outputFolder + "/" + fileNameRoot + "-" + simulationName + "_" + std::string(run.str());
+  outputNameFct = outputNameRoot + ".fct";
 
   NS_LOG_UNCOND(outputNameRoot << " " <<  outputNameFct <<  " " << simulationName);
 
@@ -193,8 +193,8 @@ main (int argc, char *argv[])
 
 
  	//Tcp Socket (general socket conf)
-//   Config::SetDefault("ns3::TcpSocket::SndBufSize", UintegerValue(1500000));
-//   Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(1500000));
+//   Config::SetDefault("ns3::TcpSocket::SndBufSize", UintegerValue(150000000));
+//   Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(150000000));
  	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1446)); //MTU
  	Config::SetDefault ("ns3::TcpSocket::InitialSlowStartThreshold", UintegerValue(4294967295));
  	Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue(1));
@@ -478,20 +478,22 @@ main (int argc, char *argv[])
   uint64_t recordedFlowsCounter = 0;
 
 //  //Prepare sink app
-  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(hosts, 20, 1000 , protocol);
+  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(hosts, 1000, 1000 , protocol);
 
   Ptr<OutputStreamWrapper> flowsCompletionTime = asciiTraceHelper.CreateFileStream (outputNameFct);
+  Ptr<OutputStreamWrapper> counterFile = asciiTraceHelper.CreateFileStream (outputNameRoot + ".counter");
+
 
   //NodeContainer tmp_hosts;
   //tmp_hosts.Add("h_0_0");
 //
 
   if (trafficPattern == "distribution"){
-  	sendFromDistribution(hosts, hostToPort, k , flowsCompletionTime, sizeDistributionFile,runStep,
+  	sendFromDistribution(hosts, hostToPort, k , flowsCompletionTime,counterFile, sizeDistributionFile,runStep,
   			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime, &recordedFlowsCounter);
   }
   else if( trafficPattern == "stride"){
-	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 5), 1, 4 ,flowsCompletionTime);
+	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 5), 1, 4 ,flowsCompletionTime, counterFile);
   }
 
   //Fill a structure with linkName->previousCounter
@@ -569,10 +571,10 @@ main (int argc, char *argv[])
 //		PcapHelper pcapHelper;
 //		Ptr<PcapFileWrapper> drop_pcap = pcapHelper.CreateFile (outputNameRoot+"-drops.pcap", std::ios::out, PcapHelper::DLT_PPP);
 //
-//		Ptr<OutputStreamWrapper> drop_ascii = asciiTraceHelper.CreateFileStream (outputNameRoot+"-drops");
+		Ptr<OutputStreamWrapper> drop_ascii = asciiTraceHelper.CreateFileStream (outputNameRoot+"-drops");
 
-//		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
-//		links[errorLink].Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
+		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
+		links[errorLink].Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
 //
 //		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropPcap, drop_pcap));
 //		links[errorLink].Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropPcap, drop_pcap));
@@ -625,7 +627,11 @@ main (int argc, char *argv[])
   	flowMonitor = flowHelper.InstallAll ();
   }
 
-//  Simulator::Schedule(Seconds(1), &printNow, 1);
+//  Simulator::Schedule(Seconds(1), &printNow, 0.25);
+
+	Ptr<OutputStreamWrapper> time_file = asciiTraceHelper.CreateFileStream (outputNameRoot + ".time");
+  Simulator::Schedule(Seconds(1), &saveNow, 0.25, time_file);
+
 
   Simulator::Stop (Seconds (500));
   Simulator::Run ();

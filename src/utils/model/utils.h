@@ -39,6 +39,8 @@ std::vector< std::pair<double,uint64_t>> GetDistribution(std::string distributio
 uint64_t GetFlowSizeFromDistribution(std::vector< std::pair<double,uint64_t>> distribution, double uniformSample);
 std::pair<uint16_t, uint16_t> GetHostPositionPair(std::string name);
 void printNow(double delay);
+void saveNow(double delay, Ptr<OutputStreamWrapper> file);
+
 uint64_t hash_string(std::string message);
 void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links, std::unordered_map<std::string, double> linkToPreviousLoad,
 		uint32_t k , DataRate linkBandwidth, double next_schedule, network_load load_data);

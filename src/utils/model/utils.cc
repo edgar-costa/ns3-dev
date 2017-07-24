@@ -466,6 +466,15 @@ void printNow(double delay){
 	Simulator::Schedule (Seconds(delay), &printNow, delay);
 }
 
+void saveNow(double delay, Ptr<OutputStreamWrapper> file){
+
+	*(file->GetStream()) << Simulator::Now().GetSeconds();
+	(file->GetStream())->flush();
+
+	Simulator::Schedule (Seconds(delay), &saveNow, delay, file);
+}
+
+
 void PrintQueueSize(Ptr<Queue<Packet>> q){
 	uint32_t size = q->GetNPackets();
 	if (size > 0){

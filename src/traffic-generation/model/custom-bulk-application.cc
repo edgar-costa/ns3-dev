@@ -132,6 +132,10 @@ void CustomBulkApplication::SetOutputFile(Ptr<OutputStreamWrapper> file){
 	m_outputFile = file;
 }
 
+void CustomBulkApplication::SetCounterFile(Ptr<OutputStreamWrapper> file){
+	m_counterFile = file;
+}
+
 void CustomBulkApplication::SetStartRecordingTime(double * startTime){
 	m_startRecordingTime =  startTime;
 }
@@ -157,10 +161,10 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
   NS_LOG_FUNCTION (this);
 
   // Create the socket if not already
-  if (!m_started)//(!m_socket)
+  if (!m_socket)//(!m_socket)
     {
-  		m_started=true;
-//      m_socket = Socket::CreateSocket (GetNode (), m_tid);
+  		//  		m_started=true;
+      m_socket = Socket::CreateSocket (GetNode (), m_tid);
 
       // Fatal error if socket type is not NS3_SOCK_STREAM or NS3_SOCK_SEQPACKET
       if (m_socket->GetSocketType () != Socket::NS3_SOCK_STREAM &&
@@ -272,10 +276,8 @@ void CustomBulkApplication::SendData (void)
 //  		}
 
 //    	uint32_t availableBuffer = m_socket->GetTxAvailable();
-
+//  		m_socket->Close ();
   	  DynamicCast<TcpSocketBase>(m_socket)->SendRST_c();
-
-//			m_socket->Close ();
 
 //  		m_socket->ShutdownSend();
       m_connected = false;
@@ -291,6 +293,11 @@ void CustomBulkApplication::SendData (void)
 
       if (m_insideIntervalFlow){
       	*m_recordedFlowsCounter = (*m_recordedFlowsCounter) -1;
+
+      	//Write in file
+      	*(m_counterFile->GetStream()) << *m_recordedFlowsCounter;
+      	m_counterFile->GetStream()->flush();
+
 //      	NS_LOG_UNCOND("Counter value at: "<< *m_recordedFlowsCounter);
 
 							//create 5 tuple
