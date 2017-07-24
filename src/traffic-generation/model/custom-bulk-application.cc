@@ -295,7 +295,7 @@ void CustomBulkApplication::SendData (void)
       	*m_recordedFlowsCounter = (*m_recordedFlowsCounter) -1;
 
       	//Write in file
-      	*(m_counterFile->GetStream()) << *m_recordedFlowsCounter;
+      	*(m_counterFile->GetStream()) << *m_recordedFlowsCounter << "\n";
       	m_counterFile->GetStream()->flush();
 
 //      	NS_LOG_UNCOND("Counter value at: "<< *m_recordedFlowsCounter);
