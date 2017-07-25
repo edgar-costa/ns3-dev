@@ -34,7 +34,7 @@ if __name__ == "__main__":
     p95_list = ["95th"]
     p99_list = ["99th"]
 
-    tmp_errors = errors.copy()
+    tmp_errors = errors[:]
 
     #ecmp, drill, etc
     for test in tests:
