@@ -45,26 +45,29 @@ if __name__ == "__main__":
                 fct_reader = Parser(root_path+root_name.format(test, error, test_seed),)
             except:
                 print "File {0} does not exist".format(root_path+root_name.format(test, error, test_seed))
-                tmp_errors.remove(error)
+                try:
+                    tmp_errors.remove(error)
+                except:
+                    pass
                 continue
             fct = fct_reader.get_attribute("fct")
 
             #fct_sorted = sorted(fct)
 
-            fct_np = np.array([float(x) for x in fct])
+            fct_np = np.array([round(float(x),5) for x in fct])
 
             #collect statistics
             minimum = np.min(fct_np)
             maximum = np.max(fct_np)
-            mean = np.mean(fct_np)
-            median = np.median(fct_np)
+            mean = round(np.mean(fct_np),5)
+            median = round(np.median(fct_np),5)
 
             #you can also use np.percentile(array, [25,75,..]) it returns an array with the percentiles
-            percentile_25 = np.percentile(fct_np, 25)
-            percentile_75 = np.percentile(fct_np, 75)
-            percentile_90 = np.percentile(fct_np, 90)
-            percentile_95 = np.percentile(fct_np, 95)
-            percentile_99 = np.percentile(fct_np, 99)
+            percentile_25 = round(np.percentile(fct_np, 25),5)
+            percentile_75 = round(np.percentile(fct_np, 75),5)
+            percentile_90 = round(np.percentile(fct_np, 90),5)
+            percentile_95 = round(np.percentile(fct_np, 95),5)
+            percentile_99 = round(np.percentile(fct_np, 99),5)
 
             #append to respective lists
 
