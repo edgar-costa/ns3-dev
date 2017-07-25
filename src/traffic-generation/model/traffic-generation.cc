@@ -153,9 +153,9 @@ void startStride(NodeContainer hosts, std::unordered_map <std::string, std::vect
 			//installSimpleSend((*host), dst,	dport, sendingRate, 100, "TCP");
 		}
 		index++;
-	if (index == 1){
-		break;
-	}
+//	if (index == 1){
+//		break;
+//	}
 	}
 }
 
@@ -239,6 +239,7 @@ void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, 
   uint64_t flowId = 0;
 
 //  uint64_t recordedFlowsCounter = 0;
+	uint64_t size_counter = 0;
 
 	for (NodeContainer::Iterator host = hosts.Begin(); host != hosts.End(); host++){
 
@@ -262,6 +263,7 @@ void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, 
 
 		//dst name
 		std::stringstream dst_name;
+
 
 		while ((startTime -1) < simulationTime){
 			//Get the destination range by picking a number from the normal distribution
@@ -321,8 +323,21 @@ void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, 
 			flowSize = GetFlowSizeFromDistribution(sizeDistribution, uniformDistributionSize(gen0));
 			startTime += interArrivalTime(gen2);
 
+
+//			if (startTime > 1 and startTime <= 2){
+//				size_counter += flowSize;
+//				NS_LOG_UNCOND("Total size: " << size_counter << " " << startTime << " " << flowSize << " " << src_name << " " << dst_name.str());
+//			}
+//			else if (startTime > 3 and startTime <=3.01){
+//				NS_LOG_UNCOND("Total size: " << size_counter);
+//
+//			}
+
 			//Install the application in the host.
 			//NS_LOG_DEBUG("Starts flow: src->" << src_name << " dst->" << dst_name.str() << " size->" <<flowSize << " startTime->"<<startTime);
+
+//			std::cout << startTime << " " << flowSize << " " << src_name << " " << dst_name.str() << "\n";
+
 			installBulkSend(src, dst, dport, flowSize, startTime, fctFile,counterFile, flowId, recordedFlowsCounter, startRecordingTime, recordingTime);
 			flowId++;
 

@@ -27,7 +27,7 @@ args = parser.parse_args()
 
 #make dir
 output_name_ns3 = args.OutputFolder + "-" + str(args.Bandwidth) + "-" + str(args.InterArrival) + "-" + str(args.RunStep)
-folder_name = "outputs/" + output_name_ns3
+folder_name = "outputs/" + output_name_ns3 + "-" + args.distribution.split("/")[1].split(".")[0]
 try:
     os.makedirs(folder_name)
 except:

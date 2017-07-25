@@ -291,6 +291,7 @@ void CustomBulkApplication::SendData (void)
 //      NS_LOG_DEBUG("Flow Duration (" << srcName << " " << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort()  << ") "  <<  (endTime-m_startTime)
 //      		<< " Seconds" << " " << "SimulationTime: " << Simulator::Now().GetSeconds() << " " << "Flow Size: " << m_maxBytes);
 
+
       if (m_insideIntervalFlow){
       	*m_recordedFlowsCounter = (*m_recordedFlowsCounter) -1;
 
@@ -320,6 +321,9 @@ void CustomBulkApplication::SendData (void)
       }
       //In this case we record all flows
       else if(m_recordingTime == -1){
+
+      	NS_LOG_UNCOND("ie");
+
 				//create 5 tuple
 				std::ostringstream flowIdentification;
 

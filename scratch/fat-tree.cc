@@ -90,6 +90,9 @@ main (int argc, char *argv[])
   bool animation = false;
   bool monitor = false;
   bool debug = false;
+  double recordingTime = 1;
+  double stopThreshold = 0.7;
+
 
   //error model
   std::string errorLink = "r_0_a0->r_c0";
@@ -121,6 +124,9 @@ main (int argc, char *argv[])
 	//Experiment
 	cmd.AddValue("SimulationTime", "Total simulation time (flow starting time is scheduled until that time, "
 			"the simulation time will be extended by the longest flow scheduled close to simulationTime", simulationTime);
+	cmd.AddValue("RecordingTime", "Time we measure flows once reached % of load", recordingTime);
+	cmd.AddValue("StopThreshold", "Time we measure flows once reached % of load", stopThreshold);
+
 	cmd.AddValue("IntraPodProb","Probability of picking a destination inside the same pod", intraPodProb);
 	cmd.AddValue("InterPodProb", "Probability of picking a destination in another pod", interPodProb);
 	cmd.AddValue("InterArrivalFlowTime", "flows we start per second", interArrivalFlowsTime);
@@ -474,7 +480,6 @@ main (int argc, char *argv[])
 
   //Special variables for interval tests.
   double recordStartTime = 0;
-  double recordingTime = 1;
   uint64_t recordedFlowsCounter = 0;
 
 //  //Prepare sink app
@@ -493,7 +498,7 @@ main (int argc, char *argv[])
   			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime, &recordedFlowsCounter);
   }
   else if( trafficPattern == "stride"){
-	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 5), 1, 4 ,flowsCompletionTime, counterFile);
+	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 10), 20, 4 ,flowsCompletionTime, counterFile);
   }
 
   //Fill a structure with linkName->previousCounter
@@ -509,10 +514,10 @@ main (int argc, char *argv[])
   }
 
   network_load load_data;
-  load_data.stopThreshold = 0.7;
+  load_data.stopThreshold = stopThreshold;
   load_data.startTime = &recordStartTime;
 
-  MeasureInOutLoad(links, linkToPreviousLoad, uint32_t(k) ,linkBandiwdth, 0.25, load_data);
+  MeasureInOutLoad(links, linkToPreviousLoad, uint32_t(k) ,linkBandiwdth, 0.5, load_data);
 
 
   //////////////////
@@ -552,7 +557,7 @@ main (int argc, char *argv[])
 
 //  	csma.EnablePcapAll(outputNameRoot, true);
 
-//  csma.EnablePcap(outputNameFct, links["h_0_0->r_0_e0"].Get(0), bool(1));
+  csma.EnablePcap(outputNameFct, links["h_0_0->r_0_e0"].Get(0), bool(1));
 //  csma.EnablePcap(outputNameFct, links["h_3_1->r_3_e0"].Get(0), bool(1));
 
 //  csma.EnablePcap(outputNameFct, links["h_0_1->r_0_e0"].Get(0), bool(1));
@@ -633,7 +638,7 @@ main (int argc, char *argv[])
   Simulator::Schedule(Seconds(1), &saveNow, 0.25, time_file);
 
 
-  Simulator::Stop (Seconds (500));
+  Simulator::Stop (Seconds (50));
   Simulator::Run ();
 
 
