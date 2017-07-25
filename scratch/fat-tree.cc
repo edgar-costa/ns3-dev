@@ -498,7 +498,7 @@ main (int argc, char *argv[])
   			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime, &recordedFlowsCounter);
   }
   else if( trafficPattern == "stride"){
-	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 10), 20, 4 ,flowsCompletionTime, counterFile);
+	  startStride(hosts, hostToPort, BytesFromRate(DataRate(linkBandiwdth), 2), 1, 16 ,flowsCompletionTime, counterFile);
   }
 
   //Fill a structure with linkName->previousCounter
@@ -557,7 +557,7 @@ main (int argc, char *argv[])
 
 //  	csma.EnablePcapAll(outputNameRoot, true);
 
-  csma.EnablePcap(outputNameFct, links["h_0_0->r_0_e0"].Get(0), bool(1));
+//  csma.EnablePcap(outputNameFct, links["h_0_0->r_0_e0"].Get(0), bool(1));
 //  csma.EnablePcap(outputNameFct, links["h_3_1->r_3_e0"].Get(0), bool(1));
 
 //  csma.EnablePcap(outputNameFct, links["h_0_1->r_0_e0"].Get(0), bool(1));
