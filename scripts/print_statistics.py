@@ -6,7 +6,7 @@ from tabulate import tabulate
 if __name__ == "__main__":
     
     tests = ["ECMP_RANDOM_FLOWLET", "ECMP_PER_FLOW", "ECMP_DRILL"]
-    errors = [0, 0.01, 0.05, 0.1]
+    errors = [0, 0.001,0.01, 0.05, 0.1]
 
     test_name = sys.argv[1]
     if test_name:
@@ -20,7 +20,6 @@ if __name__ == "__main__":
     i =1
 
     table_list = []
-    error_header = ([""] + errors) * len(tests)
     # print error_header
 
     test_header = []
@@ -46,6 +45,7 @@ if __name__ == "__main__":
                 fct_reader = Parser(root_path+root_name.format(test, error, test_seed),)
             except:
                 print "File {0} does not exist".format(root_path+root_name.format(test, error, test_seed))
+                errors.remove(error)
                 continue
             fct = fct_reader.get_attribute("fct")
 
@@ -113,5 +113,5 @@ if __name__ == "__main__":
     table_list.append(p95_list)
     table_list.append(p99_list)
 
-
+    error_header = ([""] + errors) * len(tests)
     print tabulate(table_list, error_header, "grid")

@@ -39,6 +39,10 @@ except:
 f = open(folder_name + "/" + "metadata", "w")
 for key,data in vars(args).iteritems():
     f.write(key + " : " + str(data) + "\n")
+
+f.write("test: " + str(tests))
+f.write("errors: " + str(errors))
+
 f.close()
 
 cmd = 'time ./waf --run "fat-tree --OutputFolder={2} --LinkBandwidth={4}Mbps  --Delay=50 --QueueSize=100 --Protocol=TCP --K=4 --Monitor=false --Debug=true --Animation=false --SimulationTime={5} --SizeDistribution={7}  --IntraPodProb=0 --InterPodProb=1 --InterArrivalFlowTime={6} --ErrorRate={0} --ErrorLink=r_0_a0->r_c0 --EcmpMode={1} --FlowletGapScaling=2 --SimulationName={1}_{0} --RunStep={3} --TrafficPattern=distribution --StopThreshold={8} --RecordingTime={9}" &'
