@@ -34,6 +34,8 @@ if __name__ == "__main__":
     p95_list = ["95th"]
     p99_list = ["99th"]
 
+    tmp_errors = errors.copy()
+
     #ecmp, drill, etc
     for test in tests:
         #error percentage
@@ -43,7 +45,7 @@ if __name__ == "__main__":
                 fct_reader = Parser(root_path+root_name.format(test, error, test_seed),)
             except:
                 print "File {0} does not exist".format(root_path+root_name.format(test, error, test_seed))
-                errors.remove(error)
+                tmp_errors.remove(error)
                 continue
             fct = fct_reader.get_attribute("fct")
 
@@ -113,6 +115,6 @@ if __name__ == "__main__":
 
     #build final table
     for test in tests:
-        test_header += ([test] + [""]*len(errors))
-    error_header = ([""] + errors) * len(tests)
+        test_header += ([test] + [""]*len(tmp_errors))
+    error_header = ([""] + tmp_errors) * len(tests)
     print tabulate(table_list, error_header, "grid")
