@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 from plot_scripts.parser import Parser
-# from tabulate import tabulate
+from tabulate import tabulate
 
 if __name__ == "__main__":
     
