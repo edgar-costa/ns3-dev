@@ -38,8 +38,6 @@ if __name__ == "__main__":
     for test in tests:
         #error percentage
 
-        test_header += ([test] + [""]*len(errors))
-
         for error in errors:
             try:
                 fct_reader = Parser(root_path+root_name.format(test, error, test_seed),)
@@ -113,5 +111,8 @@ if __name__ == "__main__":
     table_list.append(p95_list)
     table_list.append(p99_list)
 
+    #build final table
+    for test in tests:
+        test_header += ([test] + [""]*len(errors))
     error_header = ([""] + errors) * len(tests)
     print tabulate(table_list, error_header, "grid")
