@@ -344,7 +344,6 @@ void CustomBulkApplication::SendData (void)
 //        NS_LOG_UNCOND("Flow Duration (" << srcName << " " << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort()  << ") "  <<  (endTime-m_startTime)
 //        		<< " Seconds" << " " << "SimulationTime: " << Simulator::Now().GetSeconds() << " " << "Flow Size: " << m_maxBytes);}
 
-
     }
 }
 

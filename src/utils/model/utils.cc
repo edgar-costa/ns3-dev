@@ -288,7 +288,11 @@ allocateNodesFatTree(int k){
 
 //Just works for a fat tree.
 void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links, std::unordered_map<std::string, double> linkToPreviousLoad,
-		uint32_t k , DataRate linkBandwidth, double next_schedule, network_load load_data){
+		network_metadata metadata, double next_schedule, network_load load_data){
+
+
+	uint32_t k = metadata.k;
+	DataRate linkBandwidth = metadata.linkBandwidth;
 
 	std::stringstream host_name;
 	std::stringstream router_name;
@@ -373,8 +377,8 @@ void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links,
 	else
 	{
 		//Reschedule the function until it reaches a certain load
-		Simulator::Schedule(Seconds(next_schedule), &MeasureInOutLoad, links,linkToPreviousLoad, k,
-				linkBandwidth, next_schedule, load_data);
+		Simulator::Schedule(Seconds(next_schedule), &MeasureInOutLoad, links,linkToPreviousLoad, metadata, next_schedule, load_data);
+
 	}
 }
 

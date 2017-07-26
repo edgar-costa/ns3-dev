@@ -517,8 +517,11 @@ main (int argc, char *argv[])
   load_data.stopThreshold = stopThreshold;
   load_data.startTime = &recordStartTime;
 
-  MeasureInOutLoad(links, linkToPreviousLoad, uint32_t(k) ,linkBandiwdth, 0.5, load_data);
+  network_metadata metadata;
+  metadata.k = uint32_t(k);
+  metadata.linkBandwidth = linkBandiwdth;
 
+  MeasureInOutLoad(links, linkToPreviousLoad, metadata, 0.5, load_data);
 
   //////////////////
   //TRACES

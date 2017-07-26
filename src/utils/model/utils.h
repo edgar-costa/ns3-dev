@@ -25,6 +25,10 @@ struct network_load{
 	double *startTime;
 };
 
+struct network_metadata{
+	uint32_t k;
+	DataRate linkBandwidth;
+};
 
 Ipv4Address GetNodeIp(std::string node_name);
 Ipv4Address GetNodeIp(Ptr<Node> node);
@@ -43,7 +47,7 @@ void saveNow(double delay, Ptr<OutputStreamWrapper> file);
 
 uint64_t hash_string(std::string message);
 void MeasureInOutLoad(std::unordered_map<std::string, NetDeviceContainer> links, std::unordered_map<std::string, double> linkToPreviousLoad,
-		uint32_t k , DataRate linkBandwidth, double next_schedule, network_load load_data);
+		network_metadata metadata, double next_schedule, network_load load_data);
 
 double MeasureInterfaceLoad(Ptr<Queue<Packet>> q,  double next_schedule, std::string name, DataRate linkBandwidth);
 
