@@ -19,6 +19,7 @@ parser.add_argument('-o','--OutputFolder',
                     default = "test")
 
 parser.add_argument('-b', '--Bandwidth', help='',default=10)
+parser.add_argument('-k', help='',default=4)
 parser.add_argument('-t', '--SimulationTime', help='',default=10)
 parser.add_argument('-i', '--InterArrival', help='',default=1600)
 parser.add_argument('-d', '--Distribution', help='', default="distributions/enterprise_conga_scaled_100.csv")
@@ -46,7 +47,7 @@ f.write("errors: " + str(errors))
 
 f.close()
 
-cmd = 'time ./waf --run "fat-tree --OutputFolder={2} --LinkBandwidth={4}Mbps  --Delay=50 --QueueSize=100 --Protocol=TCP --K=4 --Monitor=false --Debug=true --Animation=false --SimulationTime={5} --SizeDistribution={7}  --IntraPodProb=0 --InterPodProb=1 --InterArrivalFlowTime={6} --ErrorRate={0} --ErrorLink=r_0_a0->r_c0 --EcmpMode={1} --FlowletGapScaling={10} --SimulationName={1}_{0} --RunStep={3} --TrafficPattern=distribution --StopThreshold={8} --RecordingTime={9}" &'
+cmd = 'time ./waf --run "fat-tree --OutputFolder={2} --LinkBandwidth={4}Mbps  --Delay=50 --QueueSize=100 --Protocol=TCP --K={11} --Monitor=false --Debug=true --Animation=false --SimulationTime={5} --SizeDistribution={7}  --IntraPodProb=0 --InterPodProb=1 --InterArrivalFlowTime={6} --ErrorRate={0} --ErrorLink=r_0_a0->r_c0 --EcmpMode={1} --FlowletGapScaling={10} --SimulationName={1}_{0} --RunStep={3} --TrafficPattern=distribution --StopThreshold={8} --RecordingTime={9}" &'
 
 
 
@@ -55,7 +56,7 @@ for test in tests:
     
     for error in errors:
         formated_cmd = cmd.format(error, test, output_name_ns3, args.RunStep, args.Bandwidth,
-                                   args.SimulationTime, args.InterArrival, args.Distribution, args.LoadThreshold, args.RecordingTime, args.FlowletScaling)
+                                   args.SimulationTime, args.InterArrival, args.Distribution, args.LoadThreshold, args.RecordingTime, args.FlowletScaling, args.k)
 
         print formated_cmd
 
