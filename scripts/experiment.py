@@ -41,7 +41,7 @@ f = open(folder_name + "/" + "metadata", "w")
 for key,data in vars(args).iteritems():
     f.write(key + " : " + str(data) + "\n")
 
-f.write("test: " + str(tests))
+f.write("test: " + str(tests) + "\n")
 f.write("errors: " + str(errors))
 
 f.close()

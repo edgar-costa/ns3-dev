@@ -14,7 +14,7 @@ class Parser(object):
         try:
             self.raw = self.load_file(self._file)
         except:
-            print "Error reading file"
+            #print "Error reading file"
             raise Exception
 
     def load_file(self,file_name):
