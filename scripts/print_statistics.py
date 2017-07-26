@@ -44,7 +44,7 @@ if __name__ == "__main__":
             try:
                 fct_reader = Parser(root_path+root_name.format(test, error, test_seed),)
             except:
-                print "File {0} does not exist".format(root_path+root_name.format(test, error, test_seed))
+                #print "File {0} does not exist".format(root_path+root_name.format(test, error, test_seed))
                 try:
                     tmp_errors.remove(error)
                 except:
