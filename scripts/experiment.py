@@ -51,7 +51,6 @@ f.close()
 cmd = 'time ./waf --run "fat-tree --OutputFolder={2} --LinkBandwidth={4}Mbps  --Delay=50 --QueueSize=100 --Protocol=TCP --K={11} --Monitor=false --Debug=true --Animation=false --SimulationTime={5} --SizeDistribution={7}  --IntraPodProb=0 --InterPodProb=1 --InterArrivalFlowTime={6} --ErrorRate={0} --ErrorLink={12} --EcmpMode={1} --FlowletGapScaling={10} --SimulationName={1}_{0} --RunStep={3} --TrafficPattern=distribution --StopThreshold={8} --RecordingTime={9}" &'
 
 
-
 first = True
 for test in tests:
     
