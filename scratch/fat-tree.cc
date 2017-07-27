@@ -653,7 +653,7 @@ main (int argc, char *argv[])
   Simulator::Schedule(Seconds(1), &saveNow, 0.25, time_file);
 
 
-  Simulator::Stop (Seconds (5));
+  Simulator::Stop (Seconds (200));
   Simulator::Run ();
 
 
