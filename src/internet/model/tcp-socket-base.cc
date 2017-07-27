@@ -521,6 +521,18 @@ TcpSocketBase::GetSocketType (void) const
   return NS3_SOCK_STREAM;
 }
 
+Ipv4EndPoint*
+TcpSocketBase::GetEndPoint(void){
+	return m_endPoint;
+}
+
+uint16_t TcpSocketBase::GetLocalPort(void){
+	//TODO check if the endpoint is still created or not
+	return m_endPoint->GetLocalPort();
+
+}
+
+
 /* Inherit from Socket class: Returns associated node */
 Ptr<Node>
 TcpSocketBase::GetNode (void) const

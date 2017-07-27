@@ -112,6 +112,7 @@ public:
 
   void SetOutputFile(Ptr<OutputStreamWrapper> file);
   void SetCounterFile(Ptr<OutputStreamWrapper> file);
+  void SetFlowsFile(Ptr<OutputStreamWrapper> file);
   void SetStartRecordingTime(double * startTime);
   void SetRecordedFlowsCounter(uint64_t * recordedFlowsCounter);
 
@@ -143,6 +144,8 @@ private:
   //Added attributes
   Ptr<OutputStreamWrapper> m_outputFile;
   Ptr<OutputStreamWrapper> m_counterFile;
+  Ptr<OutputStreamWrapper> m_flowsFile;
+
   double * m_startRecordingTime;
   uint64_t * m_recordedFlowsCounter;
   //Recording time will be initialized at -1, and if it is not set to anything it will not be taken into account

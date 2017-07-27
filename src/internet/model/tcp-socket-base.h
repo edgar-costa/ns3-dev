@@ -303,6 +303,9 @@ class TcpSocketBase : public TcpSocket
 {
 public:
 
+
+	Ipv4EndPoint* GetEndPoint(void);
+	uint16_t GetLocalPort(void);
 	void SendRST_c (void);
 
   /**

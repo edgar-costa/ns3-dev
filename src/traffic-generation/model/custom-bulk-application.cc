@@ -136,6 +136,10 @@ void CustomBulkApplication::SetCounterFile(Ptr<OutputStreamWrapper> file){
 	m_counterFile = file;
 }
 
+void CustomBulkApplication::SetFlowsFile(Ptr<OutputStreamWrapper> file){
+	m_flowsFile = file;
+}
+
 void CustomBulkApplication::SetStartRecordingTime(double * startTime){
 	m_startRecordingTime =  startTime;
 }
@@ -208,6 +212,17 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
         MakeCallback (&CustomBulkApplication::ConnectionFailed, this));
       m_socket->SetSendCallback (
         MakeCallback (&CustomBulkApplication::DataSend, this));
+
+      //Store flows info
+    	Ipv4Address srcAddr = GetNodeIp(m_socket->GetNode());
+    	uint16_t srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
+    	InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
+
+  		*(m_flowsFile->GetStream ()) << m_startTime << " " << srcAddr << " " << inetDstAddr.GetIpv4() << " " << srcPort << " " <<
+  				inetDstAddr.GetPort() << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
+
+  		(m_flowsFile->GetStream())->flush();
+
     }
 
   if (m_connected)
@@ -277,16 +292,24 @@ void CustomBulkApplication::SendData (void)
 
 //    	uint32_t availableBuffer = m_socket->GetTxAvailable();
 //  		m_socket->Close ();
+
+  		std::string srcName = GetNodeName(m_socket->GetNode());
+    	Ipv4Address srcAddr = GetNodeIp(m_socket->GetNode());
+    	InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
+
+//    	if (srcName == "h_0_0"){
+//    		NS_LOG_UNCOND("Source port " << srcName << " " << DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort());
+//    	}
+
   	  DynamicCast<TcpSocketBase>(m_socket)->SendRST_c();
+
 
 //  		m_socket->ShutdownSend();
       m_connected = false;
 
       double endTime  = Simulator::Now().GetSeconds();
 
-      std::string srcName = GetNodeName(m_socket->GetNode());
-      Ipv4Address srcAddr = GetNodeIp(m_socket->GetNode());
-      InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
+
 
 //      NS_LOG_DEBUG("Flow Duration (" << srcName << " " << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort()  << ") "  <<  (endTime-m_startTime)
 //      		<< " Seconds" << " " << "SimulationTime: " << Simulator::Now().GetSeconds() << " " << "Flow Size: " << m_maxBytes);

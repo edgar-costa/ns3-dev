@@ -20,13 +20,16 @@ std::unordered_map <std::string, std::vector<uint16_t>> installSinks(NodeContain
 Ptr<Socket> installSimpleSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t sinkPort, DataRate dataRate, uint32_t numPackets, std::string protocol);
 
 void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime,
-		Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile, uint64_t flowId, uint64_t * recordedFlowsCounter = NULL, double *startRecordingTime = NULL, double recordingTime= -1);
+		Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile, Ptr<OutputStreamWrapper> flowsFile, uint64_t flowId,
+		uint64_t * recordedFlowsCounter = NULL, double *startRecordingTime = NULL, double recordingTime= -1);
 
 void startStride(NodeContainer hosts, std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts,
-		uint64_t flowSize, uint16_t nFlows, uint16_t offset, Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile);
+		uint64_t flowSize, uint16_t nFlows, uint16_t offset, Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile,
+		Ptr<OutputStreamWrapper> flowsFile);
 
 void startRandom(NodeContainer hosts, std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts,
-		DataRate sendingRate, uint16_t flowsPerHost, uint16_t k, Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile);
+		DataRate sendingRate, uint16_t flowsPerHost, uint16_t k, Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile,
+		Ptr<OutputStreamWrapper> flowsFile);
 
 void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts,
 		uint16_t k, Ptr<OutputStreamWrapper> fctFile,Ptr<OutputStreamWrapper> counterFile, Ptr<OutputStreamWrapper> flowsFile,
