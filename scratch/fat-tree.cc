@@ -487,6 +487,7 @@ main (int argc, char *argv[])
 
   Ptr<OutputStreamWrapper> flowsCompletionTime = asciiTraceHelper.CreateFileStream (outputNameFct);
   Ptr<OutputStreamWrapper> counterFile = asciiTraceHelper.CreateFileStream (outputNameRoot + ".counter");
+  Ptr<OutputStreamWrapper> flowsFile = asciiTraceHelper.CreateFileStream (outputNameRoot + ".flows");
 
 
   NodeContainer tmp_hosts;
@@ -505,7 +506,7 @@ main (int argc, char *argv[])
 //
 
   if (trafficPattern == "distribution"){
-  	sendFromDistribution(tmp_hosts, hostToPort, k , flowsCompletionTime,counterFile, sizeDistributionFile,runStep,
+  	sendFromDistribution(tmp_hosts, hostToPort, k , flowsCompletionTime,counterFile, flowsFile, sizeDistributionFile, runStep,
   			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime, &recordedFlowsCounter);
   }
   else if( trafficPattern == "stride"){

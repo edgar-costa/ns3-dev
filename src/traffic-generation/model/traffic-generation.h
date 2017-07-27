@@ -29,10 +29,10 @@ void startRandom(NodeContainer hosts, std::unordered_map <std::string, std::vect
 		DataRate sendingRate, uint16_t flowsPerHost, uint16_t k, Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile);
 
 void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts,
-		uint16_t k, Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile, std::string distributionFile,uint32_t seed,
-		uint32_t interArrivalFlow, double sameNetProb, double interPodProb, double simulationTime, double *startRecordingTime,
-		double recordingTime, uint64_t * recordedFlowsCounter);
-
+		uint16_t k, Ptr<OutputStreamWrapper> fctFile,Ptr<OutputStreamWrapper> counterFile, Ptr<OutputStreamWrapper> flowsFile,
+		std::string distributionFile,uint32_t seed, uint32_t interArrivalFlow,
+		double intraPodProb, double interPodProb, double simulationTime,
+		double *startRecordingTime, double recordingTime, uint64_t * recordedFlowsCounter);
 }
 
 #endif /* TRAFFIC_GENERATION_H */

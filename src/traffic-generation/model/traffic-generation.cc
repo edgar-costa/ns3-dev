@@ -205,8 +205,11 @@ void startRandom(NodeContainer hosts, std::unordered_map <std::string, std::vect
 //Using distributions...
 
 void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts,
-		uint16_t k, Ptr<OutputStreamWrapper> fctFile,Ptr<OutputStreamWrapper> counterFile, std::string distributionFile,uint32_t seed, uint32_t interArrivalFlow,
-		double intraPodProb, double interPodProb, double simulationTime, double *startRecordingTime, double recordingTime, uint64_t * recordedFlowsCounter){
+		uint16_t k, Ptr<OutputStreamWrapper> fctFile,Ptr<OutputStreamWrapper> counterFile, Ptr<OutputStreamWrapper> flowsFile,
+		std::string distributionFile,uint32_t seed, uint32_t interArrivalFlow,
+		double intraPodProb, double interPodProb, double simulationTime,
+		double *startRecordingTime, double recordingTime, uint64_t * recordedFlowsCounter){
+
 
 	NS_ASSERT_MSG(interArrivalFlow >= hosts.GetN(), "Inter arrival flows has to be at least 1 flow per unit");
 
@@ -337,6 +340,12 @@ void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, 
 			//NS_LOG_DEBUG("Starts flow: src->" << src_name << " dst->" << dst_name.str() << " size->" <<flowSize << " startTime->"<<startTime);
 
 //			std::cout << startTime << " " << flowSize << " " << src_name << " " << dst_name.str() << "\n";
+
+			//Save in file
+			*(flowsFile->GetStream ()) << Simulator::Now().GetSeconds() << " "<< startTime << " " << GetNodeIp(src) << " " << GetNodeIp(dst) << " " << dport << " " << flowSize << "\n";
+
+
+			(flowsFile->GetStream())->flush();
 
 			installBulkSend(src, dst, dport, flowSize, startTime, fctFile,counterFile, flowId, recordedFlowsCounter, startRecordingTime, recordingTime);
 			flowId++;
