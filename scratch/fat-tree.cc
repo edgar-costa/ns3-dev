@@ -489,12 +489,23 @@ main (int argc, char *argv[])
   Ptr<OutputStreamWrapper> counterFile = asciiTraceHelper.CreateFileStream (outputNameRoot + ".counter");
 
 
-  //NodeContainer tmp_hosts;
-  //tmp_hosts.Add("h_0_0");
+  NodeContainer tmp_hosts;
+	for (NodeContainer::Iterator host = hosts.Begin(); host != hosts.End(); host++){
+
+		std::string host_name = GetNodeName(*host);
+
+		uint16_t pod = GetHostPositionPair(host_name).first;
+
+		if (pod == 0){
+			tmp_hosts.Add(*host);
+		}
+
+	}
+
 //
 
   if (trafficPattern == "distribution"){
-  	sendFromDistribution(hosts, hostToPort, k , flowsCompletionTime,counterFile, sizeDistributionFile,runStep,
+  	sendFromDistribution(tmp_hosts, hostToPort, k , flowsCompletionTime,counterFile, sizeDistributionFile,runStep,
   			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime, &recordedFlowsCounter);
   }
   else if( trafficPattern == "stride"){
@@ -573,7 +584,7 @@ main (int argc, char *argv[])
 		em->SetAttribute ("ErrorRate", DoubleValue (errorRate));
 		em->SetAttribute ("ErrorUnit", EnumValue(RateErrorModel::ERROR_UNIT_PACKET));
 
-		links[errorLink].Get (0)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
+//		links[errorLink].Get (0)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
 		links[errorLink].Get (1)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
 
 //		PcapHelper pcapHelper;
@@ -581,7 +592,7 @@ main (int argc, char *argv[])
 //
 		Ptr<OutputStreamWrapper> drop_ascii = asciiTraceHelper.CreateFileStream (outputNameRoot+".drops");
 
-		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
+//		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
 		links[errorLink].Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
 //
 //		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropPcap, drop_pcap));
@@ -641,7 +652,7 @@ main (int argc, char *argv[])
   Simulator::Schedule(Seconds(1), &saveNow, 0.25, time_file);
 
 
-  Simulator::Stop (Seconds (50));
+  Simulator::Stop (Seconds (5));
   Simulator::Run ();
 
 
