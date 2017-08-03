@@ -549,6 +549,7 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<const Packet> ipP
 
 					case ECMP_RANDOM:
 						selectIndex = m_rand->GetInteger (0, allRoutes.size ()-1);
+//						NS_LOG_UNCOND(Names::FindName(m_ipv4->GetObject<Node>()) << " " << selectIndex);
 						break;
 
 					case ECMP_PER_FLOW:

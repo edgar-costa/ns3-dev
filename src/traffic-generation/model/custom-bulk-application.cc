@@ -87,6 +87,9 @@ CustomBulkApplication::CustomBulkApplication ()
 		m_startTime(0),
 		m_flowId(0),
 		m_started(false),
+	  m_outputFile(NULL),
+	  m_counterFile(NULL),
+	  m_flowsFile(NULL),
 		m_recordingTime(-1),
 		m_insideIntervalFlow(false)
 {
@@ -214,14 +217,17 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
         MakeCallback (&CustomBulkApplication::DataSend, this));
 
       //Store flows info
-    	Ipv4Address srcAddr = GetNodeIp(m_socket->GetNode());
-    	uint16_t srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
-    	InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
+      if (m_flowsFile != NULL)
+      {
+				Ipv4Address srcAddr = GetNodeIp(m_socket->GetNode());
+				uint16_t srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
+				InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
 
-  		*(m_flowsFile->GetStream ()) << m_startTime << " " << srcAddr << " " << inetDstAddr.GetIpv4() << " " << srcPort << " " <<
-  				inetDstAddr.GetPort() << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
+				*(m_flowsFile->GetStream ()) << m_startTime << " " << srcAddr << " " << inetDstAddr.GetIpv4() << " " << srcPort << " " <<
+						inetDstAddr.GetPort() << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
 
-  		(m_flowsFile->GetStream())->flush();
+				(m_flowsFile->GetStream())->flush();
+      }
 
     }
 
@@ -301,9 +307,9 @@ void CustomBulkApplication::SendData (void)
 //    		NS_LOG_UNCOND("Source port " << srcName << " " << DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort());
 //    	}
 
-  	  DynamicCast<TcpSocketBase>(m_socket)->SendRST_c();
+  	  //DynamicCast<TcpSocketBase>(m_socket)->SendRST_c();
 
-
+   		m_socket->Close ();
 //  		m_socket->ShutdownSend();
       m_connected = false;
 
@@ -352,10 +358,13 @@ void CustomBulkApplication::SendData (void)
 
 				flowIdentification << ipv4AddressToString(srcAddr) << "_" << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort() << "_" << m_flowId;
 
-				*(m_outputFile->GetStream ()) << flowIdentification.str() << " " << m_maxBytes << " "
-						<< (endTime-m_startTime) << " " << m_startTime << " " << endTime << "\n";
+				if (m_outputFile != NULL)
+				{
+					*(m_outputFile->GetStream ()) << flowIdentification.str() << " " << m_maxBytes << " "
+							<< (endTime-m_startTime) << " " << m_startTime << " " << endTime << "\n";
 
-				(m_outputFile->GetStream())->flush();
+					(m_outputFile->GetStream())->flush();
+				}
 
       }
 
