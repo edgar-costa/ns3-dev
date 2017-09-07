@@ -66,6 +66,16 @@ class Socket;
  * UDP sockets can not be used.
  *
  */
+
+struct flow_tuple{
+	Ipv4Address srcAddr;
+	Ipv4Address dstAdrr;
+	uint16_t srcPort;
+	uint16_t dstPort;
+	uint16_t protocol;
+};
+
+
 class CustomBulkApplication : public Application
 {
 public:
@@ -140,6 +150,7 @@ private:
   double 					m_startTime;    //!<Starting sending time
   uint64_t        m_flowId;       //!<Id to identificate flows with other runs
   bool 						m_started;
+  flow_tuple      m_flow_tuple;
 
   //Added attributes
   Ptr<OutputStreamWrapper> m_outputFile;
@@ -171,6 +182,18 @@ private:
    * \brief Send more data as soon as some has been transmitted.
    */
   void DataSend (Ptr<Socket>, uint32_t); // for socket's SetSendCallback
+
+  /**
+   * \brief
+   */
+  void SocketNormalClose (Ptr<Socket>); // for socket's normal close
+  /**
+   * \brief
+   */
+  void SocketErrorClose (Ptr<Socket>); // for socket's error close
+
+
+
 };
 
 } // namespace ns3

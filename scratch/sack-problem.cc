@@ -28,19 +28,19 @@
 #include "ns3/netanim-module.h"
 #include "ns3/traffic-control-module.h"
 
-//#include "ns3/traffic-generation-module.h"
+#include "ns3/traffic-generation-module.h"
 //#include "ns3/utils.h"
 
 using namespace ns3;
 
 //UTILS
 //Returns node if added to the name system , 0 if it does not exist
-Ptr<Node> GetNode(std::string name){
+Ptr<Node> _GetNode(std::string name){
 	return Names::Find<Node>(name);
 }
 
 Ipv4Address
-GetNodeIp(Ptr<Node> node)
+_GetNodeIp(Ptr<Node> node)
 {
 
   Ptr<Ipv4> ip = node->GetObject<Ipv4> ();
@@ -68,7 +68,7 @@ GetNodeIp(Ptr<Node> node)
   return Ipv4Address("127.0.0.1");
 }
 
-void installSink(Ptr<Node> node, uint16_t sinkPort, uint32_t duration, std::string protocol){
+void _installSink(Ptr<Node> node, uint16_t sinkPort, uint32_t duration, std::string protocol){
 
   //create sink helper
   PacketSinkHelper packetSinkHelper ("ns3::TcpSocketFactory", InetSocketAddress (Ipv4Address::GetAny (), sinkPort));
@@ -83,12 +83,32 @@ void installSink(Ptr<Node> node, uint16_t sinkPort, uint32_t duration, std::stri
   sinkApps.Stop (Seconds (duration));
 }
 
-void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime){
+void _installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime){
 
-  Ipv4Address addr = GetNodeIp(dstHost);
+  Ipv4Address addr = _GetNodeIp(dstHost);
   Address sinkAddress (InetSocketAddress (addr, dport));
 
   Ptr<BulkSendApplication> bulkSender = CreateObject<BulkSendApplication>();
+
+  bulkSender->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
+  bulkSender->SetAttribute("MaxBytes", UintegerValue(size));
+  bulkSender->SetAttribute("Remote", AddressValue(sinkAddress));
+
+  //Install app
+  srcHost->AddApplication(bulkSender);
+
+  bulkSender->SetStartTime(Seconds(startTime));
+  bulkSender->SetStopTime(Seconds(1000));
+
+  return;
+}
+
+void _installCustomBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime){
+
+  Ipv4Address addr = _GetNodeIp(dstHost);
+  Address sinkAddress (InetSocketAddress (addr, dport));
+
+  Ptr<CustomBulkApplication> bulkSender = CreateObject<CustomBulkApplication>();
 
   bulkSender->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
   bulkSender->SetAttribute("MaxBytes", UintegerValue(size));
@@ -132,6 +152,9 @@ main (int argc, char *argv[])
 
   bool animation = true;
 
+  bool customEnabled = false;
+  uint64_t bytes_to_send = 1250000000;
+
 
   CommandLine cmd;
   //Misc
@@ -142,6 +165,10 @@ main (int argc, char *argv[])
 	cmd.AddValue("Delay", "Added delay between nodes", delay);
 	//Experiment
   cmd.AddValue("QueueSize", "Interfaces Queue length", queue_size);
+
+  cmd.AddValue("CustomEnabled", "Interfaces Queue length", customEnabled);
+  cmd.AddValue("BytesToSend", "Interfaces Queue length", bytes_to_send);
+
 
   cmd.Parse (argc, argv);
 
@@ -225,8 +252,8 @@ main (int argc, char *argv[])
   for (uint32_t i = 0; i < (hosts.GetN()/2) ; i++){
 		host_name << "s" << i;
 		central_router_name << "r" << (i+1);
-	  links[host_name.str()+"->"+router_name.str()] = csma.Install (NodeContainer(GetNode(host_name.str()),GetNode(router_name.str())));
-	  links[router_name.str()+"->"+central_router_name.str()] = csma.Install (NodeContainer(GetNode(router_name.str()),GetNode(central_router_name.str())));
+	  links[host_name.str()+"->"+router_name.str()] = csma.Install (NodeContainer(_GetNode(host_name.str()),_GetNode(router_name.str())));
+	  links[router_name.str()+"->"+central_router_name.str()] = csma.Install (NodeContainer(_GetNode(router_name.str()),_GetNode(central_router_name.str())));
 	  central_router_name.str("");
 	  host_name.str("");
   }
@@ -237,8 +264,8 @@ main (int argc, char *argv[])
   for (uint32_t i = 0; i < (hosts.GetN()/2) ; i++){
 		host_name << "d" << i;
 		central_router_name << "r" << (i+1);
-	  links[central_router_name.str()+"->"+router_name.str()] = csma.Install (NodeContainer(GetNode(router_name.str()),GetNode(central_router_name.str())));
-	  links[host_name.str()+"->"+router_name.str()] = csma.Install (NodeContainer(GetNode(host_name.str()),GetNode(router_name.str())));
+	  links[central_router_name.str()+"->"+router_name.str()] = csma.Install (NodeContainer(_GetNode(router_name.str()),_GetNode(central_router_name.str())));
+	  links[host_name.str()+"->"+router_name.str()] = csma.Install (NodeContainer(_GetNode(host_name.str()),_GetNode(router_name.str())));
 	  host_name.str("");
 	  central_router_name.str("");
   }
@@ -269,28 +296,40 @@ main (int argc, char *argv[])
   ///////////////////
   uint16_t port = 5000;
   std::string protocol = "TCP";
-  installSink(GetNode("d0"), port, 1000, protocol);
-  installSink(GetNode("d1"), port, 1000, protocol);
-  installSink(GetNode("d2"), port, 1000, protocol);
-  installSink(GetNode("d3"), port, 1000, protocol);
-  installSink(GetNode("s0"), port, 1000, protocol);
-  installSink(GetNode("s1"), port, 1000, protocol);
-  installSink(GetNode("s2"), port, 1000, protocol);
-  installSink(GetNode("s3"), port, 1000, protocol);
-
-  uint64_t bytes_to_send = 1250000000;
-
-  installBulkSend(GetNode("s0"), GetNode("d0"), port, bytes_to_send, 1);
-  installBulkSend(GetNode("s1"), GetNode("d1"), port, bytes_to_send, 1);
-  installBulkSend(GetNode("s2"), GetNode("d2"), port, bytes_to_send, 1);
-  installBulkSend(GetNode("s3"), GetNode("d3"), port, bytes_to_send, 1);
-
-  installBulkSend(GetNode("d0"), GetNode("s0"), port, bytes_to_send, 1);
-  installBulkSend(GetNode("d1"), GetNode("s1"), port, bytes_to_send, 1);
-  installBulkSend(GetNode("d2"), GetNode("s2"), port, bytes_to_send, 1);
-  installBulkSend(GetNode("d3"), GetNode("s3"), port, bytes_to_send, 1);
+  _installSink(_GetNode("d0"), port, 1000, protocol);
+  _installSink(_GetNode("d1"), port, 1000, protocol);
+  _installSink(_GetNode("d2"), port, 1000, protocol);
+  _installSink(_GetNode("d3"), port, 1000, protocol);
+  _installSink(_GetNode("s0"), port, 1000, protocol);
+  _installSink(_GetNode("s1"), port, 1000, protocol);
+  _installSink(_GetNode("s2"), port, 1000, protocol);
+  _installSink(_GetNode("s3"), port, 1000, protocol);
 
 
+  if (customEnabled == false){
+
+  _installBulkSend(_GetNode("s0"), _GetNode("d0"), port, bytes_to_send, 1);
+  _installBulkSend(_GetNode("s1"), _GetNode("d1"), port, bytes_to_send, 1);
+  _installBulkSend(_GetNode("s2"), _GetNode("d2"), port, bytes_to_send, 1);
+  _installBulkSend(_GetNode("s3"), _GetNode("d3"), port, bytes_to_send, 1);
+
+  _installBulkSend(_GetNode("d0"), _GetNode("s0"), port, bytes_to_send, 1);
+  _installBulkSend(_GetNode("d1"), _GetNode("s1"), port, bytes_to_send, 1);
+  _installBulkSend(_GetNode("d2"), _GetNode("s2"), port, bytes_to_send, 1);
+  _installBulkSend(_GetNode("d3"), _GetNode("s3"), port, bytes_to_send, 1);
+  }
+  else{
+  _installCustomBulkSend(_GetNode("s0"), _GetNode("d0"), port, bytes_to_send, 1);
+  _installCustomBulkSend(_GetNode("s1"), _GetNode("d1"), port, bytes_to_send, 1);
+  _installCustomBulkSend(_GetNode("s2"), _GetNode("d2"), port, bytes_to_send, 1);
+  _installCustomBulkSend(_GetNode("s3"), _GetNode("d3"), port, bytes_to_send, 1);
+
+  _installCustomBulkSend(_GetNode("d0"), _GetNode("s0"), port, bytes_to_send, 1);
+  _installCustomBulkSend(_GetNode("d1"), _GetNode("s1"), port, bytes_to_send, 1);
+  _installCustomBulkSend(_GetNode("d2"), _GetNode("s2"), port, bytes_to_send, 1);
+  _installCustomBulkSend(_GetNode("d3"), _GetNode("s3"), port, bytes_to_send, 1);
+
+  }
   csma.EnablePcap(fileNameRoot, links["s0->r0"].Get(0), bool(1));
 
 

@@ -208,23 +208,34 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
 				}
       }
 
-      m_socket->Connect (m_peer);
-      m_socket->ShutdownRecv ();
       m_socket->SetConnectCallback (
         MakeCallback (&CustomBulkApplication::ConnectionSucceeded, this),
         MakeCallback (&CustomBulkApplication::ConnectionFailed, this));
       m_socket->SetSendCallback (
         MakeCallback (&CustomBulkApplication::DataSend, this));
 
+      //Close Callback to measure FCT
+      m_socket->SetCloseCallbacks(
+      		MakeCallback(&CustomBulkApplication::SocketNormalClose, this),
+      		MakeCallback(&CustomBulkApplication::SocketErrorClose, this)
+      );
+
+      m_socket->Connect (m_peer);
+      m_socket->ShutdownRecv ();
+
+      //Get Flow 5 tuple
+      m_flow_tuple.srcAddr = GetNodeIp(m_socket->GetNode());
+      InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
+      m_flow_tuple.dstAdrr = inetDstAddr.GetIpv4();
+      m_flow_tuple.srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
+      m_flow_tuple.dstPort = inetDstAddr.GetPort();
+
       //Store flows info
       if (m_flowsFile != NULL)
       {
-				Ipv4Address srcAddr = GetNodeIp(m_socket->GetNode());
-				uint16_t srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
-				InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
 
-				*(m_flowsFile->GetStream ()) << m_startTime << " " << srcAddr << " " << inetDstAddr.GetIpv4() << " " << srcPort << " " <<
-						inetDstAddr.GetPort() << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
+				*(m_flowsFile->GetStream ()) << m_startTime << " " << m_flow_tuple.srcAddr << " " << m_flow_tuple.dstAdrr << " " << m_flow_tuple.srcPort << " " <<
+						m_flow_tuple.dstPort << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
 
 				(m_flowsFile->GetStream())->flush();
       }
@@ -288,94 +299,13 @@ void CustomBulkApplication::SendData (void)
         }
     }
   // Check if time to close (all sent)
-  if (m_totBytes == m_maxBytes && m_connected && (GetTxBufferSize() == 0))
+  if (m_totBytes == m_maxBytes && m_connected) //&& (GetTxBufferSize() == 0))
     {
 
-    	//waits until the txbuffer is empty
-//  		while (GetTxBufferSize() !=0){
-//  			NS_LOG_UNCOND(GetTxBufferSize());
-//  		}
-
-//    	uint32_t availableBuffer = m_socket->GetTxAvailable();
-//  		m_socket->Close ();
-
-  		std::string srcName = GetNodeName(m_socket->GetNode());
-    	Ipv4Address srcAddr = GetNodeIp(m_socket->GetNode());
-    	InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
-
-//    	if (srcName == "h_0_0"){
-//    		NS_LOG_UNCOND("Source port " << srcName << " " << DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort());
-//    	}
-
   	  //DynamicCast<TcpSocketBase>(m_socket)->SendRST_c();
-
    		m_socket->Close ();
 //  		m_socket->ShutdownSend();
       m_connected = false;
-
-      double endTime  = Simulator::Now().GetSeconds();
-
-
-
-//      NS_LOG_DEBUG("Flow Duration (" << srcName << " " << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort()  << ") "  <<  (endTime-m_startTime)
-//      		<< " Seconds" << " " << "SimulationTime: " << Simulator::Now().GetSeconds() << " " << "Flow Size: " << m_maxBytes);
-
-
-      if (m_insideIntervalFlow){
-      	*m_recordedFlowsCounter = (*m_recordedFlowsCounter) -1;
-
-      	//Write in file
-      	*(m_counterFile->GetStream()) << *m_recordedFlowsCounter << "\n";
-      	m_counterFile->GetStream()->flush();
-
-//      	NS_LOG_UNCOND("Counter value at: "<< *m_recordedFlowsCounter);
-
-							//create 5 tuple
-				std::ostringstream flowIdentification;
-
-				flowIdentification << ipv4AddressToString(srcAddr) << "_" << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort() << "_" << m_flowId;
-
-				*(m_outputFile->GetStream ()) << flowIdentification.str() << " " << m_maxBytes << " "
-						<< (endTime-m_startTime) << " " << m_startTime << " " << endTime << "\n";
-
-				(m_outputFile->GetStream())->flush();
-
-				//If flows counter is 0 we will decide to stop the simulation, but only if the flow has finished outside the simulation window
-				//IMPORTANT there is a small provability of never terminate the simulation
-				if (*m_recordedFlowsCounter == 0 && endTime > (*m_startRecordingTime + m_recordingTime)){
-					//Stop simulation
-					NS_LOG_UNCOND("Flows inside the period finished, stopping simulation...");
-					Simulator::Stop(Seconds(0));
-
-      }
-      }
-      //In this case we record all flows
-
-      else if(m_recordingTime == -1){
-
-				//create 5 tuple
-				std::ostringstream flowIdentification;
-
-				flowIdentification << ipv4AddressToString(srcAddr) << "_" << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort() << "_" << m_flowId;
-
-				if (m_outputFile != NULL)
-				{
-					*(m_outputFile->GetStream ()) << flowIdentification.str() << " " << m_maxBytes << " "
-							<< (endTime-m_startTime) << " " << m_startTime << " " << endTime << "\n";
-
-					(m_outputFile->GetStream())->flush();
-				}
-
-      }
-
-
-
-
-//      if (endTime-m_startTime > 1 and m_maxBytes < 100){
-//      	NS_LOG_UNCOND("Long Small flow");
-//        NS_LOG_UNCOND("Flow Duration (" << srcName << " " << inetDstAddr.GetIpv4() << ":" << inetDstAddr.GetPort()  << ") "  <<  (endTime-m_startTime)
-//        		<< " Seconds" << " " << "SimulationTime: " << Simulator::Now().GetSeconds() << " " << "Flow Size: " << m_maxBytes);}
-
     }
 }
 
@@ -401,6 +331,74 @@ void CustomBulkApplication::DataSend (Ptr<Socket>, uint32_t)
     { // Only send new data if the connection has completed
       SendData ();
     }
+}
+
+void CustomBulkApplication::SocketNormalClose (Ptr<Socket>)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_DEBUG("Connection closed normally");
+
+  double endTime  = Simulator::Now().GetSeconds();
+
+
+  if (m_insideIntervalFlow){
+  	*m_recordedFlowsCounter = (*m_recordedFlowsCounter) -1;
+
+  	//Write in file
+  	*(m_counterFile->GetStream()) << *m_recordedFlowsCounter << "\n";
+  	m_counterFile->GetStream()->flush();
+
+//      	NS_LOG_UNCOND("Counter value at: "<< *m_recordedFlowsCounter);
+
+					//create 5 tuple
+		std::ostringstream flowIdentification;
+
+		flowIdentification << ipv4AddressToString(m_flow_tuple.srcAddr)<< ":" << m_flow_tuple.srcPort  << "_" << m_flow_tuple.dstAdrr
+				<< ":" << m_flow_tuple.dstPort << "_" << m_flowId;
+
+		*(m_outputFile->GetStream ()) << flowIdentification.str() << " " << m_maxBytes << " "
+				<< (endTime-m_startTime) << " " << m_startTime << " " << endTime << "\n";
+
+		(m_outputFile->GetStream())->flush();
+
+		//If flows counter is 0 we will decide to stop the simulation, but only if the flow has finished outside the simulation window
+		//IMPORTANT there is a small provability of never terminate the simulation
+		if (*m_recordedFlowsCounter == 0 && endTime > (*m_startRecordingTime + m_recordingTime)){
+			//Stop simulation
+			NS_LOG_UNCOND("Flows inside the period finished, stopping simulation...");
+			Simulator::Stop(Seconds(0));
+
+  }
+  }
+  //In this case we record all flows
+
+  else if(m_recordingTime == -1){
+
+		//create 5 tuple
+		std::ostringstream flowIdentification;
+
+		flowIdentification << ipv4AddressToString(m_flow_tuple.srcAddr)<< ":" << m_flow_tuple.srcPort  << "_" << m_flow_tuple.dstAdrr
+				<< ":" << m_flow_tuple.dstPort << "_" << m_flowId;
+
+		if (m_outputFile != NULL)
+		{
+			*(m_outputFile->GetStream ()) << flowIdentification.str() << " " << m_maxBytes << " "
+					<< (endTime-m_startTime) << " " << m_startTime << " " << endTime << "\n";
+
+			(m_outputFile->GetStream())->flush();
+		}
+  }
+
+}
+
+void CustomBulkApplication::SocketErrorClose (Ptr<Socket>)
+{
+  NS_LOG_FUNCTION (this);
+
+  NS_LOG_ERROR("Connection closed by an error");
+
+
 }
 
 

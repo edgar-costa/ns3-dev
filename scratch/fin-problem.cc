@@ -99,6 +99,7 @@ void _installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint
   bulkSender->SetAttribute("MaxBytes", UintegerValue(size));
   bulkSender->SetAttribute("Remote", AddressValue(sinkAddress));
 
+
   //Install app
   srcHost->AddApplication(bulkSender);
 
@@ -118,6 +119,15 @@ void _installCustomBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport
   bulkSender->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
   bulkSender->SetAttribute("MaxBytes", UintegerValue(size));
   bulkSender->SetAttribute("Remote", AddressValue(sinkAddress));
+
+  AsciiTraceHelper asciiTraceHelper;
+
+  Ptr<OutputStreamWrapper> flowsCompletionTime = asciiTraceHelper.CreateFileStream ("fct.fct");
+  Ptr<OutputStreamWrapper> flowsFile = asciiTraceHelper.CreateFileStream ("flows.flows");
+
+  bulkSender->SetOutputFile(flowsCompletionTime);
+  bulkSender->SetFlowsFile(flowsFile);
+
 
   //Install app
   srcHost->AddApplication(bulkSender);
@@ -254,7 +264,6 @@ main (int argc, char *argv[])
 
 //  _installBulkSend(hosts.Get(0), hosts.Get(1), port, 10000, 1);
   _installCustomBulkSend(hosts.Get(0), hosts.Get(1), port, 10000, 1);
-
 
   p2p.EnablePcap(fileNameRoot, link.Get(0), bool(1));
   p2p.EnablePcap(fileNameRoot, link.Get(1), bool(1));
