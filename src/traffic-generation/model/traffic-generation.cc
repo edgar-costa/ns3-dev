@@ -24,7 +24,10 @@ void installSink(Ptr<Node> node, uint16_t sinkPort, uint32_t duration, std::stri
   ApplicationContainer sinkApps = packetSinkHelper.Install(node);
 
   sinkApps.Start (Seconds (0));
-  sinkApps.Stop (Seconds (duration));
+  //Only schedule a stop it duration is bigger than 0 seconds
+  if (duration != 0){
+  	sinkApps.Stop (Seconds (duration));
+  }
 }
 
 

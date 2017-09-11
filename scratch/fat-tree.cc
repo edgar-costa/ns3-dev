@@ -506,7 +506,7 @@ main (int argc, char *argv[])
 //
 
   if (trafficPattern == "distribution"){
-  	sendFromDistribution(tmp_hosts, hostToPort, k , flowsCompletionTime,counterFile, flowsFile, sizeDistributionFile, runStep,
+  	sendFromDistribution(hosts, hostToPort, k , flowsCompletionTime,counterFile, flowsFile, sizeDistributionFile, runStep,
   			interArrivalFlowsTime, intraPodProb, interPodProb, simulationTime, &recordStartTime, recordingTime, &recordedFlowsCounter);
   }
   else if( trafficPattern == "stride"){

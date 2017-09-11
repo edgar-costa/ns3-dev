@@ -215,30 +215,30 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
         MakeCallback (&CustomBulkApplication::DataSend, this));
 
       //Close Callback to measure FCT
-      m_socket->SetCloseCallbacks(
-      		MakeCallback(&CustomBulkApplication::SocketNormalClose, this),
-      		MakeCallback(&CustomBulkApplication::SocketErrorClose, this)
-      );
+//      m_socket->SetCloseCallbacks(
+//      		MakeCallback(&CustomBulkApplication::SocketNormalClose, this),
+//      		MakeCallback(&CustomBulkApplication::SocketErrorClose, this)
+//      );
 
       m_socket->Connect (m_peer);
       m_socket->ShutdownRecv ();
 
-      //Get Flow 5 tuple
-      m_flow_tuple.srcAddr = GetNodeIp(m_socket->GetNode());
-      InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
-      m_flow_tuple.dstAdrr = inetDstAddr.GetIpv4();
-      m_flow_tuple.srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
-      m_flow_tuple.dstPort = inetDstAddr.GetPort();
-
-      //Store flows info
-      if (m_flowsFile != NULL)
-      {
-
-				*(m_flowsFile->GetStream ()) << m_startTime << " " << m_flow_tuple.srcAddr << " " << m_flow_tuple.dstAdrr << " " << m_flow_tuple.srcPort << " " <<
-						m_flow_tuple.dstPort << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
-
-				(m_flowsFile->GetStream())->flush();
-      }
+//      //Get Flow 5 tuple
+//      m_flow_tuple.srcAddr = GetNodeIp(m_socket->GetNode());
+//      InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
+//      m_flow_tuple.dstAdrr = inetDstAddr.GetIpv4();
+//      m_flow_tuple.srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
+//      m_flow_tuple.dstPort = inetDstAddr.GetPort();
+//
+//      //Store flows info
+//      if (m_flowsFile != NULL)
+//      {
+//
+//				*(m_flowsFile->GetStream ()) << m_startTime << " " << m_flow_tuple.srcAddr << " " << m_flow_tuple.dstAdrr << " " << m_flow_tuple.srcPort << " " <<
+//						m_flow_tuple.dstPort << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
+//
+//				(m_flowsFile->GetStream())->flush();
+//      }
 
     }
 
@@ -301,10 +301,7 @@ void CustomBulkApplication::SendData (void)
   // Check if time to close (all sent)
   if (m_totBytes == m_maxBytes && m_connected) //&& (GetTxBufferSize() == 0))
     {
-
-  	  //DynamicCast<TcpSocketBase>(m_socket)->SendRST_c();
    		m_socket->Close ();
-//  		m_socket->ShutdownSend();
       m_connected = false;
     }
 }
