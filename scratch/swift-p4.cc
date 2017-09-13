@@ -80,18 +80,17 @@ main (int argc, char *argv[])
   std::string outputFolder = "";
 
   uint16_t queue_size = 100;
+  uint16_t num_hosts = 100;
+
   uint64_t runStep = 1;
-  double simulationTime = 10;
 
   std::string sizeDistributionFile = "distributions/default.txt";
   std::string trafficPattern = "distribution";
 
-  uint64_t network_delay = 50;
+  uint64_t network_delay = 10;
 
-  //TODO DEFINE rtt and min RTO
-//	int rtt = 12*delay + (12*12);
-//
-//	uint32_t minRTO = rtt*1.5;
+  double error_rate = 0.01;
+
 
   bool debug = false;
 
@@ -113,15 +112,14 @@ main (int argc, char *argv[])
   //Links properties
 	cmd.AddValue("LinkBandwidth", "Bandwidth of link, used in multiple experiments", networkBandwidth);
 	cmd.AddValue("NetworkDelay", "Added delay between nodes", network_delay);
+  cmd.AddValue("ErrorRate", "Rate of drop per packet", error_rate);
+
 
 	//Experiment
-	cmd.AddValue("SimulationTime", "Total simulation time (flow starting time is scheduled until that time, "
-			"the simulation time will be extended by the longest flow scheduled close to simulationTime", simulationTime);
-
 	cmd.AddValue("SizeDistribution", "File with the flows size distribution", sizeDistributionFile);
   cmd.AddValue("QueueSize", "Interfaces Queue length", queue_size);
   cmd.AddValue("RunStep", "Random generator starts at", runStep);
-  cmd.AddValue("TrafficPattern","stride or distribution", trafficPattern);
+  cmd.AddValue("NumHosts", "Number of hosts in each side", num_hosts);
 
   cmd.Parse (argc, argv);
 
@@ -144,6 +142,9 @@ main (int argc, char *argv[])
 	std::ostringstream run;
 	run << runStep;
 
+	//Timeout calculations (in milliseconds)
+	uint16_t rtt = (network_delay + 25 + 20)*3;
+
   outputNameRoot = outputNameRoot + outputFolder + "/" + fileNameRoot + "-" + simulationName + "_" + std::string(run.str());
 
   //TCP
@@ -156,14 +157,14 @@ main (int argc, char *argv[])
 
 
  	//Tcp Socket (general socket conf)
-//   Config::SetDefault("ns3::TcpSocket::SndBufSize", UintegerValue(150000000));
-//   Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(150000000));
+   Config::SetDefault("ns3::TcpSocket::SndBufSize", UintegerValue(150000000));
+   Config::SetDefault("ns3::TcpSocket::RcvBufSize", UintegerValue(150000000));
  	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1446)); //MTU
  	Config::SetDefault ("ns3::TcpSocket::InitialSlowStartThreshold", UintegerValue(4294967295));
  	Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue(1));
 
  	//Can be much slower than my rtt because packet size of syn is 60bytes
- 	Config::SetDefault ("ns3::TcpSocket::ConnTimeout",TimeValue(Seconds(30))); // connection retransmission timeout
+ 	Config::SetDefault ("ns3::TcpSocket::ConnTimeout",TimeValue(MilliSeconds(rtt))); // connection retransmission timeout
  	Config::SetDefault ("ns3::TcpSocket::ConnCount",UintegerValue(10)); //retrnamissions during connection
  	Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (10)); //retranmissions
 // 	Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue(MicroSeconds(rtt)));
@@ -182,7 +183,7 @@ main (int argc, char *argv[])
 
  	//TCP L4
  	Config::SetDefault ("ns3::TcpL4Protocol::SocketType", TypeIdValue (TcpNewReno::GetTypeId ()));
-// 	Config::SetDefault ("ns3::RttEstimator::InitialEstimation", TimeValue(MicroSeconds(rtt)));
+ 	Config::SetDefault ("ns3::RttEstimator::InitialEstimation", TimeValue(MicroSeconds(rtt)));
 
  	//QUEUES
  	//PFIFO
@@ -197,13 +198,6 @@ main (int argc, char *argv[])
   //Config::SetDefault ("ns3::RedQueueDisc::MinTh", DoubleValue (25));
   //Config::SetDefault ("ns3::RedQueueDisc::MaxTh", DoubleValue (50));
   //Config::SetDefault ("ns3::RedQueueDisc::QueueLimit", UintegerValue (queue_size*1500));
-
-
-   TrafficControlHelper tchRed;
-   tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", DataRateValue (DataRate (networkBandwidth)),
-                            "LinkDelay", TimeValue(MicroSeconds(network_delay)));
-
-
 
   //Define acsii helper
   AsciiTraceHelper asciiTraceHelper;
@@ -227,9 +221,14 @@ main (int argc, char *argv[])
   //Compute Fat Tree Devices
 
 
-  int num_senders = 100;
-  int num_receivers = 100;
+  int num_senders = num_hosts;
+  int num_receivers = num_hosts;
 
+  //Compute bandwidth per hosts.
+  uint64_t net_bps = networkBandwidth.GetBitRate();
+  uint64_t hosts_bps = net_bps / num_hosts;
+  sendersBandwidth = DataRate(hosts_bps);
+  receiversBandwidth =  DataRate(hosts_bps);
 
   //Senders
   NodeContainer senders;
@@ -257,7 +256,7 @@ main (int argc, char *argv[])
   links[GetNodeName(sw1)+"->"+GetNodeName(sw2)] = p2p.Install (NodeContainer(sw1, sw2));
   //Set delay and bandwdith
   links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(network_delay)));
-  links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->SetAttribute("DataRate", DataRateValue(DataRate("100Gbps")));
+  links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->SetAttribute("DataRate", DataRateValue(networkBandwidth));
 
 
   //Give names to hosts using names class and connect them to the respective switch.
@@ -345,6 +344,33 @@ main (int argc, char *argv[])
   }
   ipToName_file->GetStream()->flush();
 
+  //Add Error Model
+	if (error_rate > 0){
+
+		//Link where we add the error rate..
+		std::string errorLink = GetNodeName(sw1)+"->"+GetNodeName(sw2);
+
+		//Create the error model
+		Ptr<RateErrorModel> em = CreateObject<RateErrorModel> ();
+		em->SetAttribute ("ErrorRate", DoubleValue (error_rate));
+		em->SetAttribute ("ErrorUnit", EnumValue(RateErrorModel::ERROR_UNIT_PACKET));
+
+//		links[errorLink].Get (0)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
+		links[errorLink].Get (1)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
+
+//		PcapHelper pcapHelper;
+//		Ptr<PcapFileWrapper> drop_pcap = pcapHelper.CreateFile (outputNameRoot+"-drops.pcap", std::ios::out, PcapHelper::DLT_PPP);
+//
+		//Ptr<OutputStreamWrapper> drop_ascii = asciiTraceHelper.CreateFileStream (outputNameRoot+".drops");
+
+		//links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
+		//links[errorLink].Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
+//
+//		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropPcap, drop_pcap));
+//		links[errorLink].Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropPcap, drop_pcap));
+
+	}
+
 
   //Populate tables
   Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
@@ -359,7 +385,7 @@ main (int argc, char *argv[])
   //TRACES
 
   ///////////////////
-  	Ptr<Socket> sock = installSimpleSend(GetNode("s_1"), GetNode("d_1"), randomFromVector(hostToPort["d_1"]), DataRate("100Mbps"), 1, "TCP");
+  	Ptr<Socket> sock = installSimpleSend(GetNode("s_1"), GetNode("d_1"), randomFromVector(hostToPort["d_1"]), DataRate("100Mbps"), 1000, "TCP");
 //  	p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
   	p2p.EnablePcap(fileNameRoot, links[std::string("s_1")+"->"+GetNodeName(sw1)].Get(1), bool(1));
 
@@ -371,69 +397,3 @@ main (int argc, char *argv[])
 
     return 0;
   }
-
-
-
-//  Ptr<Socket> sock2 = installSimpleSend(GetNode("h_0_1"), GetNode("h_1_0"), randomFromVector(hostToPort["h_1_0"]), dataRate, num_packets,protocol);
-//  installSimpleSend(GetNode("h_3_1"), GetNode("h_2_0"), randomFromVector(hostToPort["h_2_0"]), dataRate, num_packets,protocol);
-
-
-
-//   Ptr<OutputStreamWrapper> stream = asciiTraceHelper.CreateFileStream (outputNameRoot+".cwnd");
-//   Ptr<OutputStreamWrapper> stream2 = asciiTraceHelper.CreateFileStream (outputNameRoot+"2.cwnd");
-//  if (protocol == "TCP"){
-//  	sock->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream));
-//  	sock2->TraceConnectWithoutContext ("CongestionWindow", MakeBoundCallback (&CwndChange, stream2));
-//  }
-
-//
-//  PcapHelper pcapHelper;
-//  Ptr<PcapFileWrapper> file = pcapHelper.CreateFile (outputNameRoot+".pcap", std::ios::out, PcapHelper::DLT_PPP);
-//
-//
-//  n0n1.Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDrop, file));
-//
-//
-//  n0n1.Get (0)->TraceConnectWithoutContext ("PhyTxDrop", MakeBoundCallback (&TxDrop, "PhyTxDrop"));
-//  n0n1.Get (0)->TraceConnectWithoutContext ("MacTxDrop", MakeBoundCallback (&TxDrop, "MacTxDrop" ));
-
-//  	links["h_0_0->r_0_e0"].Get (0)->TraceConnectWithoutContext ("MacTx", MakeBoundCallback (&TxDrop, "MacTx h_0_0"));
-  //links["h_0_1->r_0_e0"].Get (0)->TraceConnectWithoutContext ("MacTx", MakeBoundCallback (&TxDrop, "MacTx h_0_1"));
-
-//
-//  p2p.EnablePcap(outputNameFct, links["r_0_a0->r_c1"].Get(0), bool(1));
-//  p2p.EnablePcap(outputNameFct, links["r_0_a1->r_c2"].Get(0), bool(1));
-
-//  	p2p.EnablePcapAll(outputNameRoot, true);
-
-//  p2p.EnablePcap(outputNameFct, links["h_0_0->r_0_e0"].Get(0), bool(1));
-//  p2p.EnablePcap(outputNameFct, links["h_3_1->r_3_e0"].Get(0), bool(1));
-
-//  p2p.EnablePcap(outputNameFct, links["h_0_1->r_0_e0"].Get(0), bool(1));
-//  p2p.EnablePcap(outputNameFct, links["h_0_2->r_0_e1"].Get(0), bool(1));
-//  p2p.EnablePcap(outputNameFct, links["h_0_3->r_0_e1"].Get(0), bool(1));
-
-  //TODO Install Error model
-//  if (errorRate > 0){
-//		Ptr<RateErrorModel> em = CreateObject<RateErrorModel> ();
-//		em->SetAttribute ("ErrorRate", DoubleValue (errorRate));
-//		em->SetAttribute ("ErrorUnit", EnumValue(RateErrorModel::ERROR_UNIT_PACKET));
-//
-//		links[errorLink].Get (0)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
-//		links[errorLink].Get (1)->SetAttribute ("ReceiveErrorModel", PointerValue (em));
-//
-////		PcapHelper pcapHelper;
-////		Ptr<PcapFileWrapper> drop_pcap = pcapHelper.CreateFile (outputNameRoot+"-drops.pcap", std::ios::out, PcapHelper::DLT_PPP);
-////
-//		Ptr<OutputStreamWrapper> drop_ascii = asciiTraceHelper.CreateFileStream (outputNameRoot+".drops");
-//
-//		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
-//		links[errorLink].Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropAscii, drop_ascii));
-////
-////		links[errorLink].Get (0)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropPcap, drop_pcap));
-////		links[errorLink].Get (1)->TraceConnectWithoutContext ("PhyRxDrop", MakeBoundCallback (&RxDropPcap, drop_pcap));
-//
-//  }
-
-
-
