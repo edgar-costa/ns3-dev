@@ -69,7 +69,10 @@ main (int argc, char *argv[])
 	Time::SetResolution (Time::NS);
 
   //Fat tree parameters
-  DataRate linkBandiwdth("10Mbps");
+  DataRate networkBandwidth("100Gbps");
+  DataRate sendersBandwidth("1Gbps");
+  DataRate receiversBandwidth("1Gbps");
+
 
   //Command line arguments
   std::string ecmpMode = "ECMP_NONE";
@@ -83,7 +86,7 @@ main (int argc, char *argv[])
   std::string sizeDistributionFile = "distributions/default.txt";
   std::string trafficPattern = "distribution";
 
-  uint64_t delay = 50;
+  uint64_t network_delay = 50;
 
   //TODO DEFINE rtt and min RTO
 //	int rtt = 12*delay + (12*12);
@@ -106,8 +109,10 @@ main (int argc, char *argv[])
 
   //General
   cmd.AddValue ("EcmpMode", "EcmpMode: (0 none, 1 random, 2 flow, 3 Round_Robin)", ecmpMode);
-	cmd.AddValue("LinkBandwidth", "Bandwidth of link, used in multiple experiments", linkBandiwdth);
-	cmd.AddValue("Delay", "Added delay between nodes", delay);
+
+  //Links properties
+	cmd.AddValue("LinkBandwidth", "Bandwidth of link, used in multiple experiments", networkBandwidth);
+	cmd.AddValue("NetworkDelay", "Added delay between nodes", network_delay);
 
 	//Experiment
 	cmd.AddValue("SimulationTime", "Total simulation time (flow starting time is scheduled until that time, "
@@ -156,8 +161,9 @@ main (int argc, char *argv[])
  	Config::SetDefault ("ns3::TcpSocket::SegmentSize", UintegerValue (1446)); //MTU
  	Config::SetDefault ("ns3::TcpSocket::InitialSlowStartThreshold", UintegerValue(4294967295));
  	Config::SetDefault ("ns3::TcpSocket::InitialCwnd", UintegerValue(1));
+
  	//Can be much slower than my rtt because packet size of syn is 60bytes
-// 	Config::SetDefault ("ns3::TcpSocket::ConnTimeout",TimeValue(MicroSeconds(10*small_rtt))); // connection retransmission timeout
+ 	Config::SetDefault ("ns3::TcpSocket::ConnTimeout",TimeValue(Seconds(30))); // connection retransmission timeout
  	Config::SetDefault ("ns3::TcpSocket::ConnCount",UintegerValue(10)); //retrnamissions during connection
  	Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (10)); //retranmissions
 // 	Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue(MicroSeconds(rtt)));
@@ -169,7 +175,7 @@ main (int argc, char *argv[])
 
  	Config::SetDefault ("ns3::TcpSocketBase::MaxSegLifetime",DoubleValue(10));
  //	Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue(true)); //enable sack
-// 	Config::SetDefault ("ns3::TcpSocketBase::MinRto",TimeValue(MicroSeconds(minRTO))); //min RTO value that can be set
+ 	Config::SetDefault ("ns3::TcpSocketBase::MinRto",TimeValue(Seconds(30))); //min RTO value that can be set
    Config::SetDefault ("ns3::TcpSocketBase::ClockGranularity", TimeValue(MicroSeconds(1)));
    Config::SetDefault ("ns3::TcpSocketBase::ReTxThreshold", UintegerValue(3)); //same than DupAckThreshold
  //	Config::SetDefault ("ns3::TcpSocketBase::LimitedTransmit",BooleanValue(true)); //enable sack
@@ -194,8 +200,8 @@ main (int argc, char *argv[])
 
 
    TrafficControlHelper tchRed;
-   tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", DataRateValue (DataRate (linkBandiwdth)),
-                            "LinkDelay", TimeValue(MicroSeconds(delay)));
+   tchRed.SetRootQueueDisc ("ns3::RedQueueDisc", "LinkBandwidth", DataRateValue (DataRate (networkBandwidth)),
+                            "LinkDelay", TimeValue(MicroSeconds(network_delay)));
 
 
 
@@ -209,8 +215,8 @@ main (int argc, char *argv[])
   PointToPointHelper p2p;
 
 //   create point-to-point link from A to R
-  p2p.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (linkBandiwdth)));
-  p2p.SetChannelAttribute ("Delay", TimeValue (MicroSeconds(delay)));
+  p2p.SetDeviceAttribute ("DataRate", DataRateValue (DataRate (networkBandwidth)));
+  p2p.SetChannelAttribute ("Delay", TimeValue (MicroSeconds(network_delay)));
   p2p.SetDeviceAttribute("Mtu", UintegerValue(1500));
 
   p2p.SetQueue("ns3::DropTailQueue", "Mode", StringValue("QUEUE_MODE_PACKETS"));
@@ -224,6 +230,7 @@ main (int argc, char *argv[])
   int num_senders = 100;
   int num_receivers = 100;
 
+
   //Senders
   NodeContainer senders;
   senders.Create(num_senders);
@@ -233,8 +240,8 @@ main (int argc, char *argv[])
   receivers.Create(num_receivers);
 
   //Switches
-  Ptr<Node> sw1 = CreateObject<Node>;
-  Ptr<Node> sw2 = CreateObject<Node>;
+  Ptr<Node> sw1 = CreateObject<Node>();
+  Ptr<Node> sw2 = CreateObject<Node>();
 
   //Add two switches
   Names::Add("sw1", sw1);
@@ -248,12 +255,16 @@ main (int argc, char *argv[])
   //Interconnect middle switches : sw1 -> sw2
 	NS_LOG_DEBUG("Adding link between: " << GetNodeName(sw1) << " -> "  << GetNodeName(sw2));
   links[GetNodeName(sw1)+"->"+GetNodeName(sw2)] = p2p.Install (NodeContainer(sw1, sw2));
+  //Set delay and bandwdith
+  links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(network_delay)));
+  links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->SetAttribute("DataRate", DataRateValue(DataRate("100Gbps")));
+
 
   //Give names to hosts using names class and connect them to the respective switch.
   //Senders
+	int host_count = 0;
   for (NodeContainer::Iterator host = senders.Begin(); host != senders.End(); host++ ){
 
-  		int host_count = 0;
   		std::stringstream host_name;
   		host_name << "s_" << host_count;
   		NS_LOG_DEBUG(host_name.str());
@@ -264,15 +275,20 @@ main (int argc, char *argv[])
 		  links[host_name.str()+"->"+GetNodeName(sw1)] = p2p.Install (NodeContainer(*host, sw1));
 
 		  //set link delay
-		  links[host_name.str()+"->"+GetNodeName(sw1)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (Seconds(5)));
+		  double sender_delay = random_variable->GetValue(5, 25);
+
+		  links[host_name.str()+"->"+GetNodeName(sw1)].Get(0)->SetAttribute("DataRate", DataRateValue(sendersBandwidth));
+		  links[host_name.str()+"->"+GetNodeName(sw1)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(sender_delay)));
+
+  		NS_LOG_DEBUG("Link " << host_name.str() << "->" << GetNodeName(sw1) << " delay: " << sender_delay << " bandwidth: " << sendersBandwidth);
 
   		host_count++;
   }
 
   //Receivers
+	host_count = 0;
   for (NodeContainer::Iterator host = receivers.Begin(); host != receivers.End(); host++ ){
 
-  		int host_count = 0;
   		std::stringstream host_name;
   		host_name << "d_" << host_count;
   		NS_LOG_DEBUG(host_name.str());
@@ -281,6 +297,13 @@ main (int argc, char *argv[])
   		//Add link sw2->host
   		NS_LOG_DEBUG("Adding link between: " << GetNodeName(sw2) << " -> " << host_name.str());
 		  links[GetNodeName(sw2)+"->"+host_name.str()] = p2p.Install (NodeContainer(sw2, *host));
+
+		  double receiver_delay = random_variable->GetValue(5, 10);
+
+		  links[GetNodeName(sw2)+"->"+host_name.str()].Get(0)->SetAttribute("DataRate", DataRateValue(receiversBandwidth));
+		  links[GetNodeName(sw2)+"->"+host_name.str()].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(receiver_delay)));
+  		NS_LOG_DEBUG("Link " << GetNodeName(sw2)<<"->"<<host_name.str() << " delay: " << receiver_delay << " bandwidth: " << sendersBandwidth);
+
 
   		host_count++;
   }
@@ -329,13 +352,28 @@ main (int argc, char *argv[])
   //START TRAFFIC
 
   //Install Traffic sinks at receivers
-  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 1000, 0 , "TCP");
+  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 10, 0 , "TCP");
 
 
   //////////////////
   //TRACES
+
   ///////////////////
-//  Ptr<Socket> sock = installSimpleSend(GetNode("h_0_0"), GetNode("h_1_0"), randomFromVector(hostToPort["h_1_0"]), dataRate, num_packets,protocol);
+  	Ptr<Socket> sock = installSimpleSend(GetNode("s_1"), GetNode("d_1"), randomFromVector(hostToPort["d_1"]), DataRate("100Mbps"), 1, "TCP");
+//  	p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
+  	p2p.EnablePcap(fileNameRoot, links[std::string("s_1")+"->"+GetNodeName(sw1)].Get(1), bool(1));
+
+  	Simulator::Stop (Seconds (500));
+    Simulator::Run ();
+
+    Simulator::Destroy ();
+
+
+    return 0;
+  }
+
+
+
 //  Ptr<Socket> sock2 = installSimpleSend(GetNode("h_0_1"), GetNode("h_1_0"), randomFromVector(hostToPort["h_1_0"]), dataRate, num_packets,protocol);
 //  installSimpleSend(GetNode("h_3_1"), GetNode("h_2_0"), randomFromVector(hostToPort["h_2_0"]), dataRate, num_packets,protocol);
 
@@ -363,7 +401,6 @@ main (int argc, char *argv[])
   //links["h_0_1->r_0_e0"].Get (0)->TraceConnectWithoutContext ("MacTx", MakeBoundCallback (&TxDrop, "MacTx h_0_1"));
 
 //
-//  p2p.EnablePcap(outputNameFct, links["r_0_a0->r_c0"].Get(0), bool(1));
 //  p2p.EnablePcap(outputNameFct, links["r_0_a0->r_c1"].Get(0), bool(1));
 //  p2p.EnablePcap(outputNameFct, links["r_0_a1->r_c2"].Get(0), bool(1));
 
@@ -398,12 +435,5 @@ main (int argc, char *argv[])
 //
 //  }
 
-  Simulator::Stop (Seconds (500));
-  Simulator::Run ();
 
-  Simulator::Destroy ();
-
-
-  return 0;
-}
 
