@@ -47,7 +47,7 @@ CustomBulkApplication::GetTypeId (void)
     .SetGroupName("Applications") 
     .AddConstructor<CustomBulkApplication> ()
     .AddAttribute ("SendSize", "The amount of data to send each time.",
-                   UintegerValue (1024),
+                   UintegerValue (512),
                    MakeUintegerAccessor (&CustomBulkApplication::m_sendSize),
                    MakeUintegerChecker<uint32_t> (1))
     .AddAttribute ("Remote", "The address of the destination",
@@ -184,17 +184,23 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
 
       if (Inet6SocketAddress::IsMatchingType (m_peer))
         {
-          m_socket->Bind6 ();
+          if (m_socket->Bind6 () == -1)
+            {
+              NS_FATAL_ERROR ("Failed to bind socket");
+            }
         }
       else if (InetSocketAddress::IsMatchingType (m_peer))
         {
-          m_socket->Bind ();
+          if (m_socket->Bind () == -1)
+            {
+              NS_FATAL_ERROR ("Failed to bind socket");
+            }
         }
 
       //Save Starting time just before connection starts
       m_startTime  = Simulator::Now().GetSeconds();
 
-      //if recording time was set
+//      if recording time was set
       if (m_startRecordingTime != NULL){
 				if (*m_startRecordingTime > 0 && m_recordingTime != -1){
 
@@ -208,6 +214,9 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
 				}
       }
 
+      m_socket->Connect (m_peer);
+      m_socket->ShutdownRecv ();
+
       m_socket->SetConnectCallback (
         MakeCallback (&CustomBulkApplication::ConnectionSucceeded, this),
         MakeCallback (&CustomBulkApplication::ConnectionFailed, this));
@@ -215,30 +224,29 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
         MakeCallback (&CustomBulkApplication::DataSend, this));
 
       //Close Callback to measure FCT
-//      m_socket->SetCloseCallbacks(
-//      		MakeCallback(&CustomBulkApplication::SocketNormalClose, this),
-//      		MakeCallback(&CustomBulkApplication::SocketErrorClose, this)
-//      );
+      m_socket->SetCloseCallbacks(
+      		MakeCallback(&CustomBulkApplication::SocketNormalClose, this),
+      		MakeCallback(&CustomBulkApplication::SocketErrorClose, this)
+      );
 
-      m_socket->Connect (m_peer);
-      m_socket->ShutdownRecv ();
 
-//      //Get Flow 5 tuple
-//      m_flow_tuple.srcAddr = GetNodeIp(m_socket->GetNode());
-//      InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
-//      m_flow_tuple.dstAdrr = inetDstAddr.GetIpv4();
-//      m_flow_tuple.srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
-//      m_flow_tuple.dstPort = inetDstAddr.GetPort();
-//
-//      //Store flows info
-//      if (m_flowsFile != NULL)
-//      {
-//
-//				*(m_flowsFile->GetStream ()) << m_startTime << " " << m_flow_tuple.srcAddr << " " << m_flow_tuple.dstAdrr << " " << m_flow_tuple.srcPort << " " <<
-//						m_flow_tuple.dstPort << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
-//
-//				(m_flowsFile->GetStream())->flush();
-//      }
+
+      //Get Flow 5 tuple
+      m_flow_tuple.srcAddr = GetNodeIp(m_socket->GetNode());
+      InetSocketAddress inetDstAddr = InetSocketAddress::ConvertFrom(this->m_peer);
+      m_flow_tuple.dstAdrr = inetDstAddr.GetIpv4();
+      m_flow_tuple.srcPort = DynamicCast<TcpSocketBase>(m_socket)->GetLocalPort();
+      m_flow_tuple.dstPort = inetDstAddr.GetPort();
+
+      //Store flows info
+      if (m_flowsFile != NULL)
+      {
+
+				*(m_flowsFile->GetStream ()) << m_startTime << " " << m_flow_tuple.srcAddr << " " << m_flow_tuple.dstAdrr << " " << m_flow_tuple.srcPort << " " <<
+						m_flow_tuple.dstPort << " " << m_maxBytes << " " <<  m_flowId  <<  "\n";
+
+				(m_flowsFile->GetStream())->flush();
+      }
 
     }
 
@@ -284,11 +292,11 @@ void CustomBulkApplication::SendData (void)
 
       NS_LOG_LOGIC ("sending packet at " << Simulator::Now ());
       Ptr<Packet> packet = Create<Packet> (toSend);
-      m_txTrace (packet);
       int actual = m_socket->Send (packet);
       if (actual > 0)
         {
           m_totBytes += actual;
+          m_txTrace (packet);
         }
       // We exit this loop when actual < toSend as the send side
       // buffer is full. The "DataSent" callback will pop when
