@@ -3,6 +3,7 @@
 #define UTILS_H
 
 #include <string.h>
+#include <cmath>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -66,12 +67,18 @@ TxDrop (std::string s, Ptr<const Packet> p);
 
 void PrintQueueSize(Ptr<Queue<Packet>> q);
 
+
+std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines = 10000000);
+std::pair<Ptr<Node>, Ptr<Node>> rttToNodePair(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_senders,
+																							std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_receivers,
+																							double rtt);
+uint64_t leftMostPowerOfTen(uint64_t number);
+
 //gets a random element from a vector!
 template <typename T>
 T randomFromVector(std::vector<T> & vect){
 	return vect[random_variable->GetInteger(0, vect.size() -1 )];
 }
-
 
 }
 

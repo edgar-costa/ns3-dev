@@ -60,26 +60,6 @@ uint64_t hash_string(std::string message){
 
 }
 
-//Reads a file with RTTs.
-std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines = 10000000){
-
-	std::vector<double> rttVector;
-	std::ifstream infile(rttsFile);
-
-  NS_ASSERT_MSG(infile, "Please provide a valid file for reading RTT values");
-  double rtt;
-  int count_limit = 0;
-  while (infile >> rtt and count_limit < max_lines)
-  {
-  	rttVector.push_back(rtt);
-  	count_limit++;
-  }
-
-  infile.close();
-
-  return rttVector;
-}
-
 std::vector< std::pair<double,uint64_t>> GetDistribution(std::string distributionFile) {
 
   std::vector< std::pair<double,uint64_t>> cumulativeDistribution;
@@ -507,5 +487,56 @@ void PrintQueueSize(Ptr<Queue<Packet>> q){
 	}
 	Simulator::Schedule(Seconds(0.001), &PrintQueueSize, q);
 }
+
+//SWIFT-P4 utils
+
+//Reads a file with RTTs.
+std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines){
+
+	std::vector<double> rttVector;
+	std::ifstream infile(rttsFile);
+
+  NS_ASSERT_MSG(infile, "Please provide a valid file for reading RTT values");
+  double rtt;
+  uint32_t count_limit = 0;
+  while (infile >> rtt and count_limit < max_lines)
+  {
+  	rttVector.push_back(rtt);
+  	count_limit++;
+  }
+
+  infile.close();
+
+  return rttVector;
+}
+
+uint64_t leftMostPowerOfTen(uint64_t number){
+	uint64_t leftMost = 0;
+	uint64_t power_of_10 = 0;
+	while(number != 0)
+	{
+		leftMost = number;
+		power_of_10++;
+		number /=10;
+	}
+
+	return leftMost * std::pow(10, power_of_10);
+}
+
+std::pair<Ptr<Node>, Ptr<Node>> rttToNodePair(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_senders,
+																							std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_receivers,
+																							double rtt){
+
+
+	//I assume that the RTT is in seconds so first we convert it to time
+	//Since rtt = propagation time * 2 , we devide rtt time by 2
+	Time rtt_t = Seconds(rtt)/2;
+
+	std::pair<Ptr<Node>, Ptr<Node>> src_and_dst;
+
+	return src_and_dst;
+
+}
+
 
 }

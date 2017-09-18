@@ -15,6 +15,7 @@
  */
 
 #include <fstream>
+#include <ctime>
 #include <string>
 #include <iostream>
 #include <unordered_map>
@@ -70,8 +71,8 @@ main (int argc, char *argv[])
 
   //Fat tree parameters
   DataRate networkBandwidth("100Gbps");
-  DataRate sendersBandwidth("1Gbps");
-  DataRate receiversBandwidth("1Gbps");
+  DataRate sendersBandwidth("4Gbps");
+  DataRate receiversBandwidth("4Gbps");
 
 
   //Command line arguments
@@ -129,10 +130,10 @@ main (int argc, char *argv[])
 	if (debug){
 //		LogComponentEnable("Ipv4GlobalRouting", LOG_DEBUG);
 		//LogComponentEnable("Ipv4GlobalRouting", LOG_ERROR);
-		LogComponentEnable("fat-tree", LOG_ERROR);
-		LogComponentEnable("utils", LOG_DEBUG);
-		LogComponentEnable("traffic-generation", LOG_DEBUG);
-		LogComponentEnable("custom-bulk-app", LOG_DEBUG);
+		LogComponentEnable("swift-p4", LOG_DEBUG);
+		//LogComponentEnable("utils", LOG_DEBUG);
+		//LogComponentEnable("traffic-generation", LOG_DEBUG);
+		//LogComponentEnable("custom-bulk-app", LOG_DEBUG);
 		//LogComponentEnable("PacketSink", LOG_ALL);
 		//LogComponentEnable("TcpSocketBase", LOG_ALL);
 
@@ -250,6 +251,8 @@ main (int argc, char *argv[])
   //Install internet stack to nodes, very easy
   std::unordered_map<std::string, NetDeviceContainer> links;
 
+  //SETTING LINKS: delay and bandwidth.
+
   //sw1 -> sw2
   //Interconnect middle switches : sw1 -> sw2
 	NS_LOG_DEBUG("Adding link between: " << GetNodeName(sw1) << " -> "  << GetNodeName(sw2));
@@ -258,6 +261,14 @@ main (int argc, char *argv[])
   links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(network_delay)));
   links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->SetAttribute("DataRate", DataRateValue(networkBandwidth));
 
+
+  //Setting up min and max latencies.
+  Time senders_min_latency = MicroSeconds(1);
+  Time senders_current_latency = senders_min_latency;
+  Time senders_min_ceil = senders_min_latency * 10;
+  Time senders_max_latency = Seconds(10);
+
+  std::unordered_map<uint64_t, std::vector<Ptr<Node>>> senders_latency_to_node;
 
   //Give names to hosts using names class and connect them to the respective switch.
   //Senders
@@ -274,17 +285,56 @@ main (int argc, char *argv[])
 		  links[host_name.str()+"->"+GetNodeName(sw1)] = p2p.Install (NodeContainer(*host, sw1));
 
 		  //set link delay
-		  double sender_delay = random_variable->GetValue(5, 25);
+		  //double sender_delay = random_variable->GetValue(5, 25);
+		  Time delay = senders_current_latency;
 
 		  links[host_name.str()+"->"+GetNodeName(sw1)].Get(0)->SetAttribute("DataRate", DataRateValue(sendersBandwidth));
-		  links[host_name.str()+"->"+GetNodeName(sw1)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(sender_delay)));
+		  links[host_name.str()+"->"+GetNodeName(sw1)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (delay));
+  		NS_LOG_DEBUG("Link " << host_name.str() << "->" << GetNodeName(sw1) << " delay: " << delay << " bandwidth: " << sendersBandwidth);
 
-  		NS_LOG_DEBUG("Link " << host_name.str() << "->" << GetNodeName(sw1) << " delay: " << sender_delay << " bandwidth: " << sendersBandwidth);
+		  //Store this node in the latency to node map
+		  if (senders_latency_to_node.count(delay.GetInteger()) > 0 )
+		  {
+		  	senders_latency_to_node[delay.GetInteger()].push_back(*host);
+		  }
+		  else
+		  {
+		  	senders_latency_to_node[delay.GetInteger()] = std::vector<Ptr<Node>>();
+		  	senders_latency_to_node[delay.GetInteger()].push_back(*host);
+		  }
 
-  		host_count++;
+
+		  //Update delay
+  		if (senders_current_latency >= senders_max_latency)
+  		{
+  			senders_current_latency = senders_min_latency;
+  			senders_min_ceil = senders_current_latency * 10;
+  		}
+  		else
+  		{
+  			if (senders_current_latency != senders_min_ceil)
+  			{
+    			senders_current_latency += senders_min_ceil/10;
+    		}
+    		else
+    		{
+    			senders_current_latency += senders_min_ceil;
+    			senders_min_ceil = senders_min_ceil * 10;
+    		}
+  		}
+   		host_count++;
   }
 
   //Receivers
+
+  //Setting up min and max latencies.
+  Time receivers_min_latency = MicroSeconds(1);
+  Time receivers_current_latency = receivers_min_latency;
+  Time receivers_min_ceil = receivers_min_latency * 10;
+  Time receivers_max_latency = Seconds(10);
+  std::unordered_map<uint64_t, std::vector<Ptr<Node>>> receivers_latency_to_node;
+
+
 	host_count = 0;
   for (NodeContainer::Iterator host = receivers.Begin(); host != receivers.End(); host++ ){
 
@@ -297,15 +347,46 @@ main (int argc, char *argv[])
   		NS_LOG_DEBUG("Adding link between: " << GetNodeName(sw2) << " -> " << host_name.str());
 		  links[GetNodeName(sw2)+"->"+host_name.str()] = p2p.Install (NodeContainer(sw2, *host));
 
-		  double receiver_delay = random_variable->GetValue(5, 10);
+		  //set link delay
+//		  double receiver_delay = random_variable->GetValue(5, 10);
+		  Time delay = receivers_current_latency;
 
 		  links[GetNodeName(sw2)+"->"+host_name.str()].Get(0)->SetAttribute("DataRate", DataRateValue(receiversBandwidth));
-		  links[GetNodeName(sw2)+"->"+host_name.str()].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(receiver_delay)));
-  		NS_LOG_DEBUG("Link " << GetNodeName(sw2)<<"->"<<host_name.str() << " delay: " << receiver_delay << " bandwidth: " << sendersBandwidth);
+		  links[GetNodeName(sw2)+"->"+host_name.str()].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(delay)));
+  		NS_LOG_DEBUG("Link " << GetNodeName(sw2)<<"->"<<host_name.str() << " delay: " << delay << " bandwidth: " << sendersBandwidth);
 
+		  //Store this node in the latency to node map
+		  if (receivers_latency_to_node.count(delay.GetInteger()) > 0 )
+		  {
+		  	receivers_latency_to_node[delay.GetInteger()].push_back(*host);
+		  }
+		  else
+		  {
+		  	receivers_latency_to_node[delay.GetInteger()] = std::vector<Ptr<Node>>();
+		  	receivers_latency_to_node[delay.GetInteger()].push_back(*host);
+		  }
 
+		  //Update delay
+  		if (receivers_current_latency >= receivers_max_latency)
+  		{
+  			receivers_current_latency = receivers_min_latency;
+  			receivers_min_ceil = receivers_current_latency * 10;
+  		}
+  		else
+  		{
+  			if (receivers_current_latency != receivers_min_ceil)
+  			{
+    			receivers_current_latency += receivers_min_ceil/10;
+    		}
+    		else
+    		{
+    			receivers_current_latency += receivers_min_ceil;
+    			receivers_min_ceil = receivers_min_ceil * 10;
+    		}
+  		}
   		host_count++;
   }
+
 
   // Install Internet stack and assing ips
   InternetStackHelper stack;
@@ -377,22 +458,41 @@ main (int argc, char *argv[])
 
   //START TRAFFIC
 
+
+  //TEST RTT
+
   //Install Traffic sinks at receivers
-  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 10, 0 , "TCP");
+  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 1000, 0 , "TCP");
+
+  //swift-p4-traffic-generation
+  Ptr<Socket> sock = installSimpleSend(GetNode("s_1"), GetNode("d_1"), randomFromVector(hostToPort["d_1"]), DataRate("100Mbps"), 10, "TCP");
+
+//  std::vector<double> rtts = getRtts("only_rtt.txt");
+//
+//  NS_LOG_UNCOND("Vector length: " << rtts.size());
+//
+//  std::clock_t begin = std::clock();
+//
+//  for (int i = 0; i < 1000000 ; i++){
+//  	std::cout.precision(10);
+//  	randomFromVector<double>(rtts);
+//  }
+//
+//  std::clock_t end = std::clock();
+//  NS_LOG_UNCOND("Elapsed time: " << double(end- begin)/CLOCKS_PER_SEC);
+
+
 
 
   //////////////////
   //TRACES
 
   ///////////////////
-  	Ptr<Socket> sock = installSimpleSend(GetNode("s_1"), GetNode("d_1"), randomFromVector(hostToPort["d_1"]), DataRate("100Mbps"), 1000, "TCP");
-//  	p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
-  	p2p.EnablePcap(fileNameRoot, links[std::string("s_1")+"->"+GetNodeName(sw1)].Get(1), bool(1));
+  p2p.EnablePcap(fileNameRoot, links[std::string("s_1")+"->"+GetNodeName(sw1)].Get(1), bool(1));
 
-  	Simulator::Stop (Seconds (500));
-    Simulator::Run ();
-
-    Simulator::Destroy ();
+  Simulator::Stop (Seconds (500));
+  Simulator::Run ();
+  Simulator::Destroy ();
 
 
     return 0;
