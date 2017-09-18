@@ -66,6 +66,7 @@ TxDrop (std::string s, Ptr<const Packet> p);
 
 void PrintQueueSize(Ptr<Queue<Packet>> q);
 
+//gets a random element from a vector!
 template <typename T>
 T randomFromVector(std::vector<T> & vect){
 	return vect[random_variable->GetInteger(0, vect.size() -1 )];

@@ -60,6 +60,26 @@ uint64_t hash_string(std::string message){
 
 }
 
+//Reads a file with RTTs.
+std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines = 10000000){
+
+	std::vector<double> rttVector;
+	std::ifstream infile(rttsFile);
+
+  NS_ASSERT_MSG(infile, "Please provide a valid file for reading RTT values");
+  double rtt;
+  int count_limit = 0;
+  while (infile >> rtt and count_limit < max_lines)
+  {
+  	rttVector.push_back(rtt);
+  	count_limit++;
+  }
+
+  infile.close();
+
+  return rttVector;
+}
+
 std::vector< std::pair<double,uint64_t>> GetDistribution(std::string distributionFile) {
 
   std::vector< std::pair<double,uint64_t>> cumulativeDistribution;
