@@ -534,6 +534,12 @@ std::pair<Ptr<Node>, Ptr<Node>> rttToNodePair(std::unordered_map<uint64_t, std::
 
 	std::pair<Ptr<Node>, Ptr<Node>> src_and_dst;
 
+	uint64_t sender_delay = leftMostPowerOfTen(rtt_t.GetInteger());
+	uint64_t receiver_delay = leftMostPowerOfTen(rtt_t.GetInteger() - sender_delay);
+
+	src_and_dst.first  = rtt_to_senders[sender_delay];
+	src_and_dst.second = rtt_to_receivers[receiver_delay];
+
 	return src_and_dst;
 
 }
