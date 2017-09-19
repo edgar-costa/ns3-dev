@@ -65,7 +65,8 @@ Ptr<Socket> installSimpleSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t sin
 
 //DO THE SAME WITH THE BULK APP, WHICH IS PROBABLY WHAT WE WANT TO HAVE.
 void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime,
-		Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile, Ptr<OutputStreamWrapper> flowsFile, uint64_t flowId, uint64_t * recordedFlowsCounter, double *startRecordingTime, double recordingTime){
+		Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile, Ptr<OutputStreamWrapper> flowsFile,
+		uint64_t flowId, uint64_t * recordedFlowsCounter, double *startRecordingTime, double recordingTime){
 
   Ipv4Address addr = GetNodeIp(dstHost);
   Address sinkAddress (InetSocketAddress (addr, dport));
@@ -102,6 +103,8 @@ void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint6
 
 
 std::unordered_map <std::string, std::vector<uint16_t>> installSinks(NodeContainer hosts, uint16_t sinksPerHost, uint32_t duration, std::string protocol){
+
+	NS_ASSERT_MSG(sinksPerHost < ((uint16_t) -2), "Can not create such amount of sinks");
 
 	std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts;
   Ptr<UniformRandomVariable> random_generator = CreateObject<UniformRandomVariable> ();
@@ -247,7 +250,7 @@ void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, 
   uint64_t flowId = 0;
 
 //  uint64_t recordedFlowsCounter = 0;
-	uint64_t size_counter = 0;
+//	uint64_t size_counter = 0;
 
 	for (NodeContainer::Iterator host = hosts.Begin(); host != hosts.End(); host++){
 
@@ -359,6 +362,72 @@ void sendFromDistribution(NodeContainer hosts, std::unordered_map <std::string, 
 	}
 	std::clog << "Flow Count:" << flowId;
 }
+
+void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_senders,
+											std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_receivers,
+											std::unordered_map<std::string, std::vector<uint16_t>> hostsToPorts,
+											std::string rttFile,
+											std::string flowSizeFile,
+											uint32_t seed,
+											uint32_t interArrivalFlow,
+											double duration){
+
+
+	//Load RTT File
+	std::vector<double> rtts = getRtts(rttFile);
+
+
+	//Load Flow sizes File
+
+	/////
+
+
+	//Random generator to select variables...
+	//Exponential distribution to select flow inter arrival time per sender
+
+
+	std::random_device rd;  //Will be used to obtain a seed for the random number engine
+	std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+	gen.seed(seed);
+	std::exponential_distribution<double> interArrivalTime(interArrivalFlow);
+
+	double startTime = 1.0;
+	double simulationTime = duration;
+
+	while ((startTime -1) < simulationTime){
+
+
+
+		double rtt_sample = randomFromVector<double>(rtts);
+
+		std::pair<Ptr<Node>, Ptr<Node>> pair = rttToNodePair(rtt_to_senders, rtt_to_receivers, rtt_sample);
+		while(pair.first == 0  or pair.second == 0){
+			rtt_sample = randomFromVector<double>(rtts);
+			pair = rttToNodePair(rtt_to_senders, rtt_to_receivers, rtt_sample);
+		}
+
+		Ptr<Node> src = pair.first;
+		Ptr<Node> dst = pair.second;
+
+		NS_LOG_DEBUG("Flow Features: rtt:" << rtt_sample << " src:" << GetNodeName(src) <<
+				"(" << GetNodeIp(src) << ")" << " dst:" << GetNodeName(dst) << "(" << GetNodeIp(dst) << ")");
+
+		//Destination port
+		std::vector<uint16_t> availablePorts = hostsToPorts[GetNodeName(dst)];
+		uint16_t dport = randomFromVector<uint16_t>(availablePorts);
+
+		//Get Flow size sample
+		uint64_t flowSize = 50000;
+
+		startTime += interArrivalTime(gen);
+
+
+
+		installBulkSend(src, dst, dport, flowSize, startTime);
+	}
+}
+
+
 
 }
 

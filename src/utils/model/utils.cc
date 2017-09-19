@@ -513,14 +513,19 @@ std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines){
 uint64_t leftMostPowerOfTen(uint64_t number){
 	uint64_t leftMost = 0;
 	uint64_t power_of_10 = 0;
+
+	//Handle an exception
+	if (number == 0){
+		return 0;
+	}
+
 	while(number != 0)
 	{
 		leftMost = number;
 		power_of_10++;
 		number /=10;
 	}
-
-	return leftMost * std::pow(10, power_of_10);
+	return leftMost * std::pow(10, power_of_10 -1);
 }
 
 std::pair<Ptr<Node>, Ptr<Node>> rttToNodePair(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_senders,
@@ -530,17 +535,30 @@ std::pair<Ptr<Node>, Ptr<Node>> rttToNodePair(std::unordered_map<uint64_t, std::
 
 	//I assume that the RTT is in seconds so first we convert it to time
 	//Since rtt = propagation time * 2 , we devide rtt time by 2
-	Time rtt_t = Seconds(rtt)/2;
+	Time rtt_t = Time((rtt/2)*1e9);
 
 	std::pair<Ptr<Node>, Ptr<Node>> src_and_dst;
 
 	uint64_t sender_delay = leftMostPowerOfTen(rtt_t.GetInteger());
 	uint64_t receiver_delay = leftMostPowerOfTen(rtt_t.GetInteger() - sender_delay);
 
+	NS_LOG_UNCOND(sender_delay << " " << receiver_delay);
+
 	//Assumes that the desired delay exists in the unordered map, that is a big assumption....
 	//multiple hosts could be set with the same delay, so we pick up one randomly
-	src_and_dst.first  = randomFromVector(rtt_to_senders[sender_delay]);
-	src_and_dst.second = randomFromVector(rtt_to_receivers[receiver_delay]);
+
+	std::unordered_map<uint64_t, std::vector<Ptr<Node>>>::iterator iter = rtt_to_senders.find(sender_delay);
+
+	if (iter != rtt_to_senders.end()){
+		src_and_dst.first  = randomFromVector<Ptr<Node>>(iter->second);
+	}
+
+	iter = rtt_to_receivers.find(receiver_delay);
+	if (iter != rtt_to_receivers.end()){
+		src_and_dst.second  = randomFromVector<Ptr<Node>>(iter->second);
+	}
+//	src_and_dst.first  = randomFromVector(rtt_to_senders[sender_delay]);
+//	src_and_dst.second = randomFromVector(rtt_to_receivers[receiver_delay]);
 
 	return src_and_dst;
 

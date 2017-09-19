@@ -88,9 +88,9 @@ main (int argc, char *argv[])
   std::string sizeDistributionFile = "distributions/default.txt";
   std::string trafficPattern = "distribution";
 
-  uint64_t network_delay = 10;
+  uint64_t network_delay = 1;
 
-  double error_rate = 0.01;
+  double error_rate = 0.001;
 
 
   bool debug = false;
@@ -131,8 +131,8 @@ main (int argc, char *argv[])
 //		LogComponentEnable("Ipv4GlobalRouting", LOG_DEBUG);
 		//LogComponentEnable("Ipv4GlobalRouting", LOG_ERROR);
 		LogComponentEnable("swift-p4", LOG_DEBUG);
-		//LogComponentEnable("utils", LOG_DEBUG);
-		//LogComponentEnable("traffic-generation", LOG_DEBUG);
+		LogComponentEnable("utils", LOG_DEBUG);
+		LogComponentEnable("traffic-generation", LOG_DEBUG);
 		//LogComponentEnable("custom-bulk-app", LOG_DEBUG);
 		//LogComponentEnable("PacketSink", LOG_ALL);
 		//LogComponentEnable("TcpSocketBase", LOG_ALL);
@@ -144,7 +144,7 @@ main (int argc, char *argv[])
 	run << runStep;
 
 	//Timeout calculations (in milliseconds)
-	uint16_t rtt = (network_delay + 25 + 20)*3;
+	uint16_t rtt = 200;
 
   outputNameRoot = outputNameRoot + outputFolder + "/" + fileNameRoot + "-" + simulationName + "_" + std::string(run.str());
 
@@ -177,7 +177,7 @@ main (int argc, char *argv[])
 
  	Config::SetDefault ("ns3::TcpSocketBase::MaxSegLifetime",DoubleValue(10));
  //	Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue(true)); //enable sack
- 	Config::SetDefault ("ns3::TcpSocketBase::MinRto",TimeValue(Seconds(30))); //min RTO value that can be set
+ 	Config::SetDefault ("ns3::TcpSocketBase::MinRto",TimeValue(MilliSeconds(rtt))); //min RTO value that can be set
    Config::SetDefault ("ns3::TcpSocketBase::ClockGranularity", TimeValue(MicroSeconds(1)));
    Config::SetDefault ("ns3::TcpSocketBase::ReTxThreshold", UintegerValue(3)); //same than DupAckThreshold
  //	Config::SetDefault ("ns3::TcpSocketBase::LimitedTransmit",BooleanValue(true)); //enable sack
@@ -258,7 +258,7 @@ main (int argc, char *argv[])
 	NS_LOG_DEBUG("Adding link between: " << GetNodeName(sw1) << " -> "  << GetNodeName(sw2));
   links[GetNodeName(sw1)+"->"+GetNodeName(sw2)] = p2p.Install (NodeContainer(sw1, sw2));
   //Set delay and bandwdith
-  links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(network_delay)));
+  links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(network_delay)));
   links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0)->SetAttribute("DataRate", DataRateValue(networkBandwidth));
 
 
@@ -290,6 +290,7 @@ main (int argc, char *argv[])
 
 		  links[host_name.str()+"->"+GetNodeName(sw1)].Get(0)->SetAttribute("DataRate", DataRateValue(sendersBandwidth));
 		  links[host_name.str()+"->"+GetNodeName(sw1)].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (delay));
+
   		NS_LOG_DEBUG("Link " << host_name.str() << "->" << GetNodeName(sw1) << " delay: " << delay << " bandwidth: " << sendersBandwidth);
 
 		  //Store this node in the latency to node map
@@ -458,37 +459,27 @@ main (int argc, char *argv[])
 
   //START TRAFFIC
 
-
-  //TEST RTT
-
   //Install Traffic sinks at receivers
-  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 1000, 0 , "TCP");
 
-  //swift-p4-traffic-generation
+  links["s_1->sw1"].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(1)));
+  links["sw2->d_1"].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(1)));
+
+
+  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 10, 0 , "TCP");
+
   Ptr<Socket> sock = installSimpleSend(GetNode("s_1"), GetNode("d_1"), randomFromVector(hostToPort["d_1"]), DataRate("100Mbps"), 10, "TCP");
 
-//  std::vector<double> rtts = getRtts("only_rtt.txt");
-//
-//  NS_LOG_UNCOND("Vector length: " << rtts.size());
-//
-//  std::clock_t begin = std::clock();
-//
-//  for (int i = 0; i < 1000000 ; i++){
-//  	std::cout.precision(10);
-//  	randomFromVector<double>(rtts);
-//  }
-//
-//  std::clock_t end = std::clock();
-//  NS_LOG_UNCOND("Elapsed time: " << double(end- begin)/CLOCKS_PER_SEC);
 
+  //sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "only_rtt.txt", "",runStep ,1, 1);
 
-
+  //Senders function
 
   //////////////////
   //TRACES
 
   ///////////////////
-  p2p.EnablePcap(fileNameRoot, links[std::string("s_1")+"->"+GetNodeName(sw1)].Get(1), bool(1));
+  p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
+//  p2p.EnablePcap(fileNameRoot, links[std::string("s_1")+"->"+GetNodeName(sw1)].Get(1), bool(1));
 
   Simulator::Stop (Seconds (500));
   Simulator::Run ();
