@@ -353,7 +353,7 @@ main (int argc, char *argv[])
 		  Time delay = receivers_current_latency;
 
 		  links[GetNodeName(sw2)+"->"+host_name.str()].Get(0)->SetAttribute("DataRate", DataRateValue(receiversBandwidth));
-		  links[GetNodeName(sw2)+"->"+host_name.str()].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MilliSeconds(delay)));
+		  links[GetNodeName(sw2)+"->"+host_name.str()].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (delay));
   		NS_LOG_DEBUG("Link " << GetNodeName(sw2)<<"->"<<host_name.str() << " delay: " << delay << " bandwidth: " << sendersBandwidth);
 
 		  //Store this node in the latency to node map
@@ -465,18 +465,18 @@ main (int argc, char *argv[])
   //  links["s_40->sw1"].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(1)));
   //  links["sw2->d_31"].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(1)));
 
-  TimeValue time_test;
-  links["sw2->d_31"].Get(0)->GetChannel()->GetAttribute("Delay", time_test);
-  NS_LOG_UNCOND("we got a delay of: " << time_test.Get().GetSeconds());
+//  TimeValue time_test;
+//  links["sw2->d_31"].Get(0)->GetChannel()->GetAttribute("Delay", time_test);
+//  NS_LOG_UNCOND("we got a delay of: " << time_test.Get().GetSeconds());
 
 
 
   std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 10, 0 , "TCP");
 
-  Ptr<Socket> sock = installSimpleSend(GetNode("s_40"), GetNode("d_31"), randomFromVector(hostToPort["d_31"]), DataRate("100Mbps"), 10, "TCP");
+//  Ptr<Socket> sock = installSimpleSend(GetNode("s_40"), GetNode("d_31"), randomFromVector(hostToPort["d_31"]), DataRate("100Mbps"), 10, "TCP");
 
 
-//  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "only_rtt.txt", "",runStep ,1, 1);
+  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "only_rtt.txt", "",runStep ,10000, 5);
 
   //Senders function
 
@@ -485,7 +485,7 @@ main (int argc, char *argv[])
 
   ///////////////////
   p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
-//  p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw2)+"->"+"d_31"].Get(0), bool(1));
+//  p2p.EnablePcap(fileNameRoot, links["s_40->sw1"].Get(0), bool(1));
 
   Simulator::Stop (Seconds (500));
   Simulator::Run ();

@@ -417,7 +417,7 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 		uint16_t dport = randomFromVector<uint16_t>(availablePorts);
 
 		//Get Flow size sample
-		uint64_t flowSize = 50000;
+		uint64_t flowSize = 300000;
 
 		startTime += interArrivalTime(gen);
 

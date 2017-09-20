@@ -542,7 +542,7 @@ std::pair<Ptr<Node>, Ptr<Node>> rttToNodePair(std::unordered_map<uint64_t, std::
 	uint64_t sender_delay = leftMostPowerOfTen(rtt_t.GetInteger());
 	uint64_t receiver_delay = leftMostPowerOfTen(rtt_t.GetInteger() - sender_delay);
 
-	NS_LOG_UNCOND(sender_delay << " " << receiver_delay);
+	NS_LOG_DEBUG("Sender's Link Delay: " << Time(sender_delay).GetSeconds() << " --- Receiver's Link Delay: " << Time(receiver_delay).GetSeconds());
 
 	//Assumes that the desired delay exists in the unordered map, that is a big assumption....
 	//multiple hosts could be set with the same delay, so we pick up one randomly
