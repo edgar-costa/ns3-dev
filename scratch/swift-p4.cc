@@ -168,8 +168,8 @@ main (int argc, char *argv[])
  	Config::SetDefault ("ns3::TcpSocket::ConnTimeout",TimeValue(MilliSeconds(rtt))); // connection retransmission timeout
  	Config::SetDefault ("ns3::TcpSocket::ConnCount",UintegerValue(10)); //retrnamissions during connection
  	Config::SetDefault ("ns3::TcpSocket::DataRetries", UintegerValue (10)); //retranmissions
-// 	Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue(MicroSeconds(rtt)));
- 	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue(2));
+ 	Config::SetDefault ("ns3::TcpSocket::DelAckTimeout", TimeValue(MilliSeconds(rtt/50)));
+// 	Config::SetDefault ("ns3::TcpSocket::DelAckCount", UintegerValue(2));
  	Config::SetDefault ("ns3::TcpSocket::TcpNoDelay", BooleanValue(true)); //disable nagle's algorithm
  	Config::SetDefault ("ns3::TcpSocket::PersistTimeout", TimeValue(NanoSeconds(6000000000))); //persist timeout to porbe for rx window
 
@@ -281,7 +281,7 @@ main (int argc, char *argv[])
   		Names::Add(host_name.str(), (*host));
 
   		//add link host-> sw1
-  		NS_LOG_DEBUG("Adding link between: " << host_name.str() << " -> "  << GetNodeName(sw2));
+  		NS_LOG_DEBUG("Adding link between: " << host_name.str() << " -> "  << GetNodeName(sw1));
 		  links[host_name.str()+"->"+GetNodeName(sw1)] = p2p.Install (NodeContainer(*host, sw1));
 
 		  //set link delay
@@ -461,16 +461,22 @@ main (int argc, char *argv[])
 
   //Install Traffic sinks at receivers
 
-  links["s_1->sw1"].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(1)));
-  links["sw2->d_1"].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(1)));
+
+  //  links["s_40->sw1"].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(1)));
+  //  links["sw2->d_31"].Get(0)->GetChannel()->SetAttribute("Delay", TimeValue (MicroSeconds(1)));
+
+  TimeValue time_test;
+  links["sw2->d_31"].Get(0)->GetChannel()->GetAttribute("Delay", time_test);
+  NS_LOG_UNCOND("we got a delay of: " << time_test.Get().GetSeconds());
+
 
 
   std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 10, 0 , "TCP");
 
-  Ptr<Socket> sock = installSimpleSend(GetNode("s_1"), GetNode("d_1"), randomFromVector(hostToPort["d_1"]), DataRate("100Mbps"), 10, "TCP");
+  Ptr<Socket> sock = installSimpleSend(GetNode("s_40"), GetNode("d_31"), randomFromVector(hostToPort["d_31"]), DataRate("100Mbps"), 10, "TCP");
 
 
-  //sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "only_rtt.txt", "",runStep ,1, 1);
+//  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "only_rtt.txt", "",runStep ,1, 1);
 
   //Senders function
 
@@ -479,7 +485,7 @@ main (int argc, char *argv[])
 
   ///////////////////
   p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
-//  p2p.EnablePcap(fileNameRoot, links[std::string("s_1")+"->"+GetNodeName(sw1)].Get(1), bool(1));
+//  p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw2)+"->"+"d_31"].Get(0), bool(1));
 
   Simulator::Stop (Seconds (500));
   Simulator::Run ();
