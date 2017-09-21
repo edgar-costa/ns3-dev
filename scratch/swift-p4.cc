@@ -476,7 +476,7 @@ main (int argc, char *argv[])
 //  Ptr<Socket> sock = installSimpleSend(GetNode("s_40"), GetNode("d_31"), randomFromVector(hostToPort["d_31"]), DataRate("100Mbps"), 10, "TCP");
 
 
-  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "only_rtt.txt", "",runStep ,10000, 5);
+  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "swift_datasets/rtt.txt", "swift_datasets/netflow.flows",runStep ,100, 5);
 
   //Senders function
 

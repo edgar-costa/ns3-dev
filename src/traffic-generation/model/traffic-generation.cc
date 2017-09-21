@@ -63,6 +63,30 @@ Ptr<Socket> installSimpleSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t sin
   return ns3Socket;
 }
 
+void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, DataRate dataRate, uint32_t packet_size, double startTime){
+
+  Ipv4Address addr = GetNodeIp(dstHost);
+  Address sinkAddress (InetSocketAddress (addr, dport));
+
+  Ptr<OnOffApplication> onoff_sender =  CreateObject<OnOffApplication>();
+
+  onoff_sender->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
+  onoff_sender->SetAttribute("Remote", AddressValue(sinkAddress));
+
+  onoff_sender->SetAttribute("DataRate", AddressValue(sinkAddress));
+  onoff_sender->SetAttribute("PacketSize", AddressValue(sinkAddress));
+  onoff_sender->SetAttribute("MaxBytes", AddressValue(sinkAddress));
+//  onoff_sender->SetAttribute("OnTime", AddressValue(sinkAddress));
+//  onoff_sender->SetAttribute("OffTime", AddressValue(sinkAddress));
+
+
+  srcHost->AddApplication(onoff_sender);
+  onoff_sender->SetStartTime(Seconds(startTime));
+  //TODO: check if this has some implication.
+  onoff_sender->SetStopTime(Seconds(1000));
+
+}
+
 //DO THE SAME WITH THE BULK APP, WHICH IS PROBABLY WHAT WE WANT TO HAVE.
 void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime,
 		Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile, Ptr<OutputStreamWrapper> flowsFile,
@@ -379,7 +403,7 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 
 	//Load Flow sizes File
 
-	/////
+	std::vector<flow_size_metadata> flow_sizes = getFlowSizes(flowSizeFile);
 
 
 	//Random generator to select variables...
@@ -396,9 +420,8 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 
 	while ((startTime -1) < simulationTime){
 
-
-
 		double rtt_sample = randomFromVector<double>(rtts);
+		flow_size_metadata size_sample = randomFromVector<flow_size_metadata>(flow_sizes);
 
 		std::pair<Ptr<Node>, Ptr<Node>> pair = rttToNodePair(rtt_to_senders, rtt_to_receivers, rtt_sample);
 		while(pair.first == 0  or pair.second == 0){
@@ -410,7 +433,8 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 		Ptr<Node> dst = pair.second;
 
 		NS_LOG_DEBUG("Flow Features: rtt:" << rtt_sample << " src:" << GetNodeName(src) <<
-				"(" << GetNodeIp(src) << ")" << " dst:" << GetNodeName(dst) << "(" << GetNodeIp(dst) << ")");
+				"(" << GetNodeIp(src) << ")" << " dst:" << GetNodeName(dst) << "(" << GetNodeIp(dst) << ")"
+				<< " Size: " << size_sample.duration << " " << size_sample.packets << " " << size_sample.bytes);
 
 		//Destination port
 		std::vector<uint16_t> availablePorts = hostsToPorts[GetNodeName(dst)];

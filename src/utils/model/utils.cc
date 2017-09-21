@@ -499,7 +499,7 @@ std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines){
   NS_ASSERT_MSG(infile, "Please provide a valid file for reading RTT values");
   double rtt;
   uint32_t count_limit = 0;
-  while (infile >> rtt and count_limit < max_lines)
+  while (infile >> rtt and (count_limit < max_lines or max_lines == 0))
   {
   	rttVector.push_back(rtt);
   	count_limit++;
@@ -508,6 +508,26 @@ std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines){
   infile.close();
 
   return rttVector;
+}
+
+std::vector<flow_size_metadata> getFlowSizes(std::string flowSizeFile, uint32_t max_lines){
+	std::vector<flow_size_metadata> flows;
+
+	std::ifstream infile(flowSizeFile);
+
+  NS_ASSERT_MSG(infile, "Please provide a valid file for the flow Size values");
+
+  flow_size_metadata flow_metadata;
+
+  uint32_t count_limit = 0;
+  while (infile >> flow_metadata.packets >> flow_metadata.duration >> flow_metadata.bytes  and (count_limit < max_lines or max_lines == 0))
+  {
+  	flows.push_back(flow_metadata);
+  	count_limit++;
+  }
+  infile.close();
+
+	return flows;
 }
 
 uint64_t leftMostPowerOfTen(uint64_t number){

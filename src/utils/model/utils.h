@@ -31,6 +31,12 @@ struct network_metadata{
 	DataRate linkBandwidth;
 };
 
+struct flow_size_metadata{
+	uint32_t packets;
+	uint32_t duration;
+	uint64_t bytes;
+};
+
 Ipv4Address GetNodeIp(std::string node_name);
 Ipv4Address GetNodeIp(Ptr<Node> node);
 
@@ -68,7 +74,9 @@ TxDrop (std::string s, Ptr<const Packet> p);
 void PrintQueueSize(Ptr<Queue<Packet>> q);
 
 
-std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines = 10000000);
+std::vector<double> getRtts(std::string rttsFile, uint32_t max_lines = 0);
+std::vector<flow_size_metadata> getFlowSizes(std::string flowSizeFile, uint32_t max_lines = 0);
+
 std::pair<Ptr<Node>, Ptr<Node>> rttToNodePair(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_senders,
 																							std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_to_receivers,
 																							double rtt);
