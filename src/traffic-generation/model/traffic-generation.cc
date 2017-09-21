@@ -403,11 +403,12 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 
 	//Load Flow sizes File
 
-	std::vector<flow_size_metadata> flow_sizes = getFlowSizes(flowSizeFile);
+	//std::vector<flow_size_metadata> flow_sizes = getFlowSizes(flowSizeFile);
 
 
 	//Random generator to select variables...
 	//Exponential distribution to select flow inter arrival time per sender
+	Ptr<UniformRandomVariable> random_size = CreateObject<UniformRandomVariable> ();
 
 
 	std::random_device rd;  //Will be used to obtain a seed for the random number engine
@@ -421,7 +422,9 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 	while ((startTime -1) < simulationTime){
 
 		double rtt_sample = randomFromVector<double>(rtts);
-		flow_size_metadata size_sample = randomFromVector<flow_size_metadata>(flow_sizes);
+
+		//flow_size_metadata size_sample = randomFromVector<flow_size_metadata>(flow_sizes);
+
 
 		std::pair<Ptr<Node>, Ptr<Node>> pair = rttToNodePair(rtt_to_senders, rtt_to_receivers, rtt_sample);
 		while(pair.first == 0  or pair.second == 0){
@@ -433,19 +436,17 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 		Ptr<Node> dst = pair.second;
 
 		NS_LOG_DEBUG("Flow Features: rtt:" << rtt_sample << " src:" << GetNodeName(src) <<
-				"(" << GetNodeIp(src) << ")" << " dst:" << GetNodeName(dst) << "(" << GetNodeIp(dst) << ")"
-				<< " Size: " << size_sample.duration << " " << size_sample.packets << " " << size_sample.bytes);
+				"(" << GetNodeIp(src) << ")" << " dst:" << GetNodeName(dst) << "(" << GetNodeIp(dst) << ")");
+				//<< " Size: " << size_sample.duration << " " << size_sample.packets << " " << size_sample.bytes);
 
 		//Destination port
 		std::vector<uint16_t> availablePorts = hostsToPorts[GetNodeName(dst)];
 		uint16_t dport = randomFromVector<uint16_t>(availablePorts);
 
 		//Get Flow size sample
-		uint64_t flowSize = 300000;
+		uint64_t flowSize = random_size->GetInteger(1000,500000);
 
 		startTime += interArrivalTime(gen);
-
-
 
 		installBulkSend(src, dst, dport, flowSize, startTime);
 	}
