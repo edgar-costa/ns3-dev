@@ -243,7 +243,7 @@ void OnOffApplication::ScheduleNextTx ()
       NS_LOG_LOGIC ("bits = " << bits);
       Time nextTime (Seconds (bits /
                               static_cast<double>(m_cbrRate.GetBitRate ()))); // Time till next packet
-      NS_LOG_LOGIC ("nextTime = " << nextTime);
+      NS_LOG_LOGIC ("nextTime = " << nextTime.GetSeconds());
       m_sendEvent = Simulator::Schedule (nextTime,
                                          &OnOffApplication::SendPacket, this);
     }
@@ -258,7 +258,7 @@ void OnOffApplication::ScheduleStartEvent ()
   NS_LOG_FUNCTION (this);
 
   Time offInterval = Seconds (m_offTime->GetValue ());
-  NS_LOG_LOGIC ("start at " << offInterval);
+  NS_LOG_LOGIC ("start at " << offInterval.GetSeconds());
   m_startStopEvent = Simulator::Schedule (offInterval, &OnOffApplication::StartSending, this);
 }
 
@@ -267,7 +267,7 @@ void OnOffApplication::ScheduleStopEvent ()
   NS_LOG_FUNCTION (this);
 
   Time onInterval = Seconds (m_onTime->GetValue ());
-  NS_LOG_LOGIC ("stop at " << onInterval);
+  NS_LOG_LOGIC ("stop at " << onInterval.GetSeconds());
   m_startStopEvent = Simulator::Schedule (onInterval, &OnOffApplication::StopSending, this);
 }
 

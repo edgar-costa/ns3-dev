@@ -63,7 +63,7 @@ Ptr<Socket> installSimpleSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t sin
   return ns3Socket;
 }
 
-void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, DataRate dataRate, uint32_t packet_size, double startTime){
+void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, DataRate dataRate, uint32_t packet_size, uint64_t max_size, double startTime){
 
   Ipv4Address addr = GetNodeIp(dstHost);
   Address sinkAddress (InetSocketAddress (addr, dport));
@@ -73,9 +73,9 @@ void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, Data
   onoff_sender->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
   onoff_sender->SetAttribute("Remote", AddressValue(sinkAddress));
 
-  onoff_sender->SetAttribute("DataRate", AddressValue(sinkAddress));
-  onoff_sender->SetAttribute("PacketSize", AddressValue(sinkAddress));
-  onoff_sender->SetAttribute("MaxBytes", AddressValue(sinkAddress));
+  onoff_sender->SetAttribute("DataRate", DataRateValue(dataRate));
+  onoff_sender->SetAttribute("PacketSize", UintegerValue(packet_size));
+  onoff_sender->SetAttribute("MaxBytes", UintegerValue(max_size));
 //  onoff_sender->SetAttribute("OnTime", AddressValue(sinkAddress));
 //  onoff_sender->SetAttribute("OffTime", AddressValue(sinkAddress));
 

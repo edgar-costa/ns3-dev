@@ -23,6 +23,9 @@ void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint6
 		Ptr<OutputStreamWrapper> fctFile=NULL, Ptr<OutputStreamWrapper> counterFile=NULL, Ptr<OutputStreamWrapper> flowsFile=NULL, uint64_t flowId=0,
 		uint64_t * recordedFlowsCounter = NULL, double *startRecordingTime = NULL, double recordingTime= -1);
 
+void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, DataRate dataRate, uint32_t packet_size, uint64_t max_size, double startTime);
+
+
 void startStride(NodeContainer hosts, std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts,
 		uint64_t flowSize, uint16_t nFlows, uint16_t offset, Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile,
 		Ptr<OutputStreamWrapper> flowsFile);
