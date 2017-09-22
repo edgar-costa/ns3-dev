@@ -23,6 +23,9 @@ void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint6
 		Ptr<OutputStreamWrapper> fctFile=NULL, Ptr<OutputStreamWrapper> counterFile=NULL, Ptr<OutputStreamWrapper> flowsFile=NULL, uint64_t flowId=0,
 		uint64_t * recordedFlowsCounter = NULL, double *startRecordingTime = NULL, double recordingTime= -1);
 
+void installNormalBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime);
+
+
 void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, DataRate dataRate, uint32_t packet_size, uint64_t max_size, double startTime);
 
 

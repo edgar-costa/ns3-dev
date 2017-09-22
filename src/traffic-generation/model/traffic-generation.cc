@@ -124,6 +124,28 @@ void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint6
 //  return socket;
 }
 
+void installNormalBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime){
+
+  Ipv4Address addr = GetNodeIp(dstHost);
+  Address sinkAddress (InetSocketAddress (addr, dport));
+
+  Ptr<BulkSendApplication> bulkSender = CreateObject<BulkSendApplication>();
+
+  bulkSender->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
+  bulkSender->SetAttribute("MaxBytes", UintegerValue(size));
+  bulkSender->SetAttribute("Remote", AddressValue(sinkAddress));
+
+  //Install app
+  srcHost->AddApplication(bulkSender);
+
+  bulkSender->SetStartTime(Seconds(startTime));
+  bulkSender->SetStopTime(Seconds(1000));
+
+  return;
+//  return socket;
+}
+
+
 
 
 std::unordered_map <std::string, std::vector<uint16_t>> installSinks(NodeContainer hosts, uint16_t sinksPerHost, uint32_t duration, std::string protocol){
@@ -419,6 +441,10 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 	double startTime = 1.0;
 	double simulationTime = duration;
 
+	//TEST TO SEE HOSTS DISTRIBUTION
+	std::unordered_map<std::string, uint32_t> sender_flows_count;
+
+
 	while ((startTime -1) < simulationTime){
 
 		double rtt_sample = randomFromVector<double>(rtts);
@@ -435,6 +461,17 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 		Ptr<Node> src = pair.first;
 		Ptr<Node> dst = pair.second;
 
+	  //Store this node in the latency to node map
+	  if (sender_flows_count.count(GetNodeName(src)) > 0 )
+	  {
+	  	sender_flows_count[GetNodeName(src)] +=1;
+	  }
+	  else
+	  {
+	  	sender_flows_count[GetNodeName(src)] = 1;
+	  }
+
+
 		NS_LOG_DEBUG("Flow Features: rtt:" << rtt_sample << " src:" << GetNodeName(src) <<
 				"(" << GetNodeIp(src) << ")" << " dst:" << GetNodeName(dst) << "(" << GetNodeIp(dst) << ")");
 				//<< " Size: " << size_sample.duration << " " << size_sample.packets << " " << size_sample.bytes);
@@ -450,6 +487,16 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 
 		installBulkSend(src, dst, dport, flowSize, startTime);
 	}
+
+	//Prin sender_flows_count if debug.
+
+	for (auto it = sender_flows_count.begin(); it != sender_flows_count.end(); it++){
+
+		NS_ASSERT_MSG(it->second < 60000, "Too many bindings at host: " + it->first);
+		NS_LOG_DEBUG("Host " << it->first << " sends: " << it->second << " flows");
+
+	}
+
 }
 
 

@@ -193,6 +193,7 @@ void CustomBulkApplication::StartApplication (void) // Called at time specified 
         {
           if (m_socket->Bind () == -1)
             {
+          		NS_LOG_UNCOND("Hosts " << GetNodeName(GetNode()) << " failed");
               NS_FATAL_ERROR ("Failed to bind socket");
             }
         }

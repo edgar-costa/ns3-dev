@@ -10,6 +10,7 @@ def build(bld):
     module = bld.create_ns3_module('traffic-generation', ['core'])
     module.source = [
         'model/traffic-generation.cc',
+        'model/custom-onoff-application.cc',
         'model/simple-send.cc',
         'model/custom-bulk-application.cc',
         'helper/custom-bulk-helper.cc',
@@ -27,6 +28,7 @@ def build(bld):
         'model/traffic-generation.h',
         'model/simple-send.h',
         'helper/custom-bulk-helper.h',
+        'model/custom-onoff-application.h',
         'model/custom-bulk-application.h',
         'helper/traffic-generation-helper.h',
         ]

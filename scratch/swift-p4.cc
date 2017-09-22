@@ -81,7 +81,7 @@ main (int argc, char *argv[])
   std::string outputFolder = "";
 
   uint16_t queue_size = 100;
-  uint16_t num_hosts = 100;
+  uint16_t num_hosts = 200;
 
   uint64_t runStep = 1;
 
@@ -176,7 +176,7 @@ main (int argc, char *argv[])
  	//Tcp Socket Base: provides connection orientation, sliding window, flow control; congestion control is delegated to the subclasses (i.e new reno)
 
  	Config::SetDefault ("ns3::TcpSocketBase::MaxSegLifetime",DoubleValue(10));
- //	Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue(true)); //enable sack
+ 	Config::SetDefault ("ns3::TcpSocketBase::Sack", BooleanValue(false)); //enable sack
  	Config::SetDefault ("ns3::TcpSocketBase::MinRto",TimeValue(MilliSeconds(rtt))); //min RTO value that can be set
    Config::SetDefault ("ns3::TcpSocketBase::ClockGranularity", TimeValue(MicroSeconds(1)));
    Config::SetDefault ("ns3::TcpSocketBase::ReTxThreshold", UintegerValue(3)); //same than DupAckThreshold
@@ -476,7 +476,7 @@ main (int argc, char *argv[])
 //  Ptr<Socket> sock = installSimpleSend(GetNode("s_40"), GetNode("d_31"), randomFromVector(hostToPort["d_31"]), DataRate("100Mbps"), 10, "TCP");
 
 
-  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "swift_datasets/rtt.txt", "swift_datasets/netflow.flows",runStep ,100, 2);
+  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "swift_datasets/rtt.txt", "swift_datasets/netflow.flows",runStep ,50000, 5);
 
   //Senders function
 
@@ -484,7 +484,7 @@ main (int argc, char *argv[])
   //TRACES
 
   ///////////////////
-  p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
+  //p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
 //  p2p.EnablePcap(fileNameRoot, links["s_40->sw1"].Get(0), bool(1));
 
   Simulator::Stop (Seconds (500));
