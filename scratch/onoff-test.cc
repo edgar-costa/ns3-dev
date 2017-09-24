@@ -213,7 +213,7 @@ main (int argc, char *argv[])
   std::string protocol = "TCP";
   _installSink(hosts.Get(1), port, 1000, protocol);
 
-  installOnOffSend(hosts.Get(0), hosts.Get(1), port, DataRate("1Gbps"), 512, 4500, 1);
+  installOnOffSend(hosts.Get(0), hosts.Get(1), port, DataRate("4Gbps"), 512, 512000, 1);
 
 
   p2p.EnablePcap(fileNameRoot, link.Get(0), bool(1));

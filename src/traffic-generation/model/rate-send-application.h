@@ -67,7 +67,7 @@ class Socket;
  *
  */
 
-struct flow_tuple {
+struct flow_tuple_rate {
 	Ipv4Address srcAddr;
 	Ipv4Address dstAdrr;
 	uint16_t srcPort;
@@ -135,15 +135,23 @@ private:
 	bool m_connected;    //!< True if connected
 	uint32_t m_sendSize;     //!< Size of data to send each time
 	uint64_t m_maxBytes;     //!< Limit total number of bytes sent
+	uint64_t m_bytesPerSec;     //!< Limit total number of bytes sent
 	uint64_t m_totBytes;     //!< Total bytes sent so far
+	uint64_t m_bytesInBucket;
 	TypeId m_tid;          //!< The type of protocol to use.
-	bool m_started;
-	flow_tuple m_flow_tuple;
+	double m_startTime;    //!<Starting sending time
+	flow_tuple_rate m_flow_tuple;
+  EventId         m_refillEvent;
+  bool            m_sendingData;
+
 
 	/// Traced Callback: sent packets
 	TracedCallback<Ptr<const Packet> > m_txTrace;
 
 private:
+
+	void RefillBucket(void);
+
 	/**
 	 * \brief Connection Succeeded (called by Socket through a callback)
 	 * \param socket the connected socket

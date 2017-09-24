@@ -52,6 +52,9 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 											uint32_t interArrivalFlow = 1000,
 											double duration = 5);
 
+void sendBindTest(Ptr<Node> src,NodeContainer receivers, std::unordered_map<std::string, std::vector<uint16_t>> hostsToPorts, uint32_t flows);
+
+
 }
 
 #endif /* TRAFFIC_GENERATION_H */

@@ -302,11 +302,16 @@ void CustomBulkApplication::SendData (void)
       // We exit this loop when actual < toSend as the send side
       // buffer is full. The "DataSent" callback will pop when
       // some buffer space has freed up.
+//  		NS_LOG_UNCOND(GetNodeName(GetNode()) <<"  " << Simulator::Now().GetSeconds());
+
       if ((unsigned)actual != toSend)
         {
           break;
         }
     }
+
+
+
   // Check if time to close (all sent)
   if (m_totBytes == m_maxBytes && m_connected) //&& (GetTxBufferSize() == 0))
     {

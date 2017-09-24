@@ -481,7 +481,7 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 		uint16_t dport = randomFromVector<uint16_t>(availablePorts);
 
 		//Get Flow size sample
-		uint64_t flowSize = random_size->GetInteger(1000,500000);
+		uint64_t flowSize = random_size->GetInteger(1000,50000);
 
 		startTime += interArrivalTime(gen);
 
@@ -492,12 +492,28 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 
 	for (auto it = sender_flows_count.begin(); it != sender_flows_count.end(); it++){
 
-		NS_ASSERT_MSG(it->second < 60000, "Too many bindings at host: " + it->first);
+		NS_ASSERT_MSG(it->second < 62000, "Too many bindings at host: " + it->first);
 		NS_LOG_DEBUG("Host " << it->first << " sends: " << it->second << " flows");
 
 	}
 
 }
+
+void sendBindTest(Ptr<Node> src, NodeContainer receivers, std::unordered_map<std::string, std::vector<uint16_t>> hostsToPorts, uint32_t flows){
+
+
+	for (uint32_t i = 0 ; i < flows ;i++){
+
+		Ptr<Node> dst  = receivers.Get(random_variable->GetInteger(0, receivers.GetN()-1));
+		std::vector<uint16_t> availablePorts = hostsToPorts[GetNodeName(dst)];
+		uint16_t dport = randomFromVector<uint16_t>(availablePorts);
+		installBulkSend(src, dst, dport, 1500, 1);
+
+	}
+
+
+}
+
 
 
 

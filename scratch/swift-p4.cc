@@ -81,7 +81,7 @@ main (int argc, char *argv[])
   std::string outputFolder = "";
 
   uint16_t queue_size = 100;
-  uint16_t num_hosts = 200;
+  uint16_t num_hosts = 300;
 
   uint64_t runStep = 1;
 
@@ -94,7 +94,7 @@ main (int argc, char *argv[])
 
 
   bool debug = false;
-
+  uint32_t flowsPersec = 100;
 
   CommandLine cmd;
 
@@ -121,6 +121,8 @@ main (int argc, char *argv[])
   cmd.AddValue("QueueSize", "Interfaces Queue length", queue_size);
   cmd.AddValue("RunStep", "Random generator starts at", runStep);
   cmd.AddValue("NumHosts", "Number of hosts in each side", num_hosts);
+  cmd.AddValue("FlowsPerSec", "Number of hosts in each side", flowsPersec);
+
 
   cmd.Parse (argc, argv);
 
@@ -471,12 +473,15 @@ main (int argc, char *argv[])
 
 
 
-  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 10, 0 , "TCP");
+  std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 500, 0 , "TCP");
 
 //  Ptr<Socket> sock = installSimpleSend(GetNode("s_40"), GetNode("d_31"), randomFromVector(hostToPort["d_31"]), DataRate("100Mbps"), 10, "TCP");
 
 
-  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "swift_datasets/rtt.txt", "swift_datasets/netflow.flows",runStep ,50000, 5);
+//  sendBindTest(GetNode("s_36"), receivers, hostToPort, 16400);
+
+
+  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "swift_datasets/rtt.txt", "swift_datasets/netflow.flows",runStep ,flowsPersec, 5);
 
   //Senders function
 

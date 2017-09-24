@@ -62,8 +62,12 @@ RateSendApplication::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&RateSendApplication::m_maxBytes),
                    MakeUintegerChecker<uint64_t> ())
-
-    .AddAttribute ("Protocol", "The type of protocol to use.",
+	  .AddAttribute ("BytesPerSec",
+									 "Bytes the app is allowed to send every second. ",
+									 UintegerValue (0),
+									 MakeUintegerAccessor (&RateSendApplication::m_bytesPerSec),
+									 MakeUintegerChecker<uint64_t> ())
+	 .AddAttribute ("Protocol", "The type of protocol to use.",
                    TypeIdValue (TcpSocketFactory::GetTypeId ()),
                    MakeTypeIdAccessor (&RateSendApplication::m_tid),
                    MakeTypeIdChecker ())
@@ -79,8 +83,8 @@ RateSendApplication::RateSendApplication ()
   : m_socket (0),
     m_connected (false),
     m_totBytes (0),
-		m_startTime(0),
-		m_started(false),
+		m_bytesInBucket(0),
+		m_startTime(0)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -173,16 +177,16 @@ void RateSendApplication::StartApplication (void) // Called at time specified by
       m_socket->SetConnectCallback (
         MakeCallback (&RateSendApplication::ConnectionSucceeded, this),
         MakeCallback (&RateSendApplication::ConnectionFailed, this));
+
+
       m_socket->SetSendCallback (
         MakeCallback (&RateSendApplication::DataSend, this));
 
       //Close Callback to measure FCT
-      m_socket->SetCloseCallbacks(
-      		MakeCallback(&RateSendApplication::SocketNormalClose, this),
-      		MakeCallback(&RateSendApplication::SocketErrorClose, this)
-      );
-
-
+//      m_socket->SetCloseCallbacks(
+//      		MakeCallback(&RateSendApplication::SocketNormalClose, this),
+//      		MakeCallback(&RateSendApplication::SocketErrorClose, this)
+//      );
 
       //Get Flow 5 tuple
       m_flow_tuple.srcAddr = GetNodeIp(m_socket->GetNode());
@@ -195,9 +199,11 @@ void RateSendApplication::StartApplication (void) // Called at time specified by
 
   if (m_connected)
     {
+  		RefillBucket();
       SendData ();
     }
 }
+
 
 void RateSendApplication::StopApplication (void) // Called at time specified by Stop
 {
@@ -205,6 +211,7 @@ void RateSendApplication::StopApplication (void) // Called at time specified by 
 
   if (m_socket != 0)
     {
+  		Simulator::Cancel(m_refillEvent);
       m_socket->Close ();
       m_connected = false;
     }
@@ -217,10 +224,27 @@ void RateSendApplication::StopApplication (void) // Called at time specified by 
 
 // Private helpers
 
+void RateSendApplication::RefillBucket(void){
+
+  NS_LOG_FUNCTION (this);
+
+  //Adds bytes into the bucket.
+  m_bytesInBucket += std::min(m_bytesPerSec, (m_maxBytes - m_totBytes));
+
+  //if we reached total bytes to send bucked is not refilled.
+  if (m_maxBytes != m_totBytes){
+    	m_refillEvent = Simulator::Schedule (Seconds(1), &RateSendApplication::RefillBucket, this);
+  }
+
+}
+
 void RateSendApplication::SendData (void)
 {
   NS_LOG_FUNCTION (this);
-  while (m_maxBytes == 0 || m_totBytes < m_maxBytes)
+  m_sendingData = true;
+
+
+  while (m_bytesInBucket > 0)
     { // Time to send more
 
       // uint64_t to allow the comparison later.
@@ -228,10 +252,7 @@ void RateSendApplication::SendData (void)
       // m_sendSize is uint32_t.
       uint64_t toSend = m_sendSize;
       // Make sure we don't send too many
-      if (m_maxBytes > 0)
-        {
-          toSend = std::min (toSend, m_maxBytes - m_totBytes);
-        }
+      toSend = std::min (toSend, m_bytesInBucket);
 
       NS_LOG_LOGIC ("sending packet at " << Simulator::Now ());
       Ptr<Packet> packet = Create<Packet> (toSend);
@@ -239,23 +260,33 @@ void RateSendApplication::SendData (void)
       if (actual > 0)
         {
           m_totBytes += actual;
+          m_bytesInBucket -= actual;
           m_txTrace (packet);
         }
+
       // We exit this loop when actual < toSend as the send side
       // buffer is full. The "DataSent" callback will pop when
       // some buffer space has freed up.
       if ((unsigned)actual != toSend)
         {
+      		m_sendingData = false;
           break;
         }
-    }
-  // Check if time to close (all sent)
+   }
+
+	m_sendingData = false;
+
+	// Check if time to close (all sent)
   if (m_totBytes == m_maxBytes && m_connected) //&& (GetTxBufferSize() == 0))
     {
-   		m_socket->Close ();
-      m_connected = false;
+  		StopApplication();
     }
 }
+
+
+
+
+
 
 void RateSendApplication::ConnectionSucceeded (Ptr<Socket> socket)
 {

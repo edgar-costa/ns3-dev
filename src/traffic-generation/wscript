@@ -28,7 +28,7 @@ def build(bld):
     headers.source = [
         'model/traffic-generation.h',
         'model/simple-send.h',
-        'model/rate-send-application.h,
+        'model/rate-send-application.h',
         'helper/custom-bulk-helper.h',
         'model/custom-onoff-application.h',
         'model/custom-bulk-application.h',
