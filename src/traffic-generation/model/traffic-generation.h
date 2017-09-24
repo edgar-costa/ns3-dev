@@ -28,6 +28,8 @@ void installNormalBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport,
 
 void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, DataRate dataRate, uint32_t packet_size, uint64_t max_size, double startTime);
 
+void installRateSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t max_size, double duration, double startTime);
+
 
 void startStride(NodeContainer hosts, std::unordered_map <std::string, std::vector<uint16_t>> hostsToPorts,
 		uint64_t flowSize, uint16_t nFlows, uint16_t offset, Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile,

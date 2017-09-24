@@ -87,6 +87,30 @@ void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, Data
 
 }
 
+void installRateSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t max_size, double duration, double startTime){
+
+  Ipv4Address addr = GetNodeIp(dstHost);
+  Address sinkAddress (InetSocketAddress (addr, dport));
+
+  Ptr<RateSendApplication> rate_send_app =  CreateObject<RateSendApplication>();
+
+  rate_send_app->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
+  rate_send_app->SetAttribute("Remote", AddressValue(sinkAddress));
+
+  rate_send_app->SetAttribute("MaxBytes", UintegerValue(max_size));
+
+  uint64_t bytes_per_sec  = max_size/duration;
+
+  rate_send_app->SetAttribute("BytesPerSec", UintegerValue(bytes_per_sec));
+
+  srcHost->AddApplication(rate_send_app);
+  rate_send_app->SetStartTime(Seconds(startTime));
+  //TODO: check if this has some implication.
+  rate_send_app->SetStopTime(Seconds(1000));
+}
+
+
+
 //DO THE SAME WITH THE BULK APP, WHICH IS PROBABLY WHAT WE WANT TO HAVE.
 void installBulkSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t size, double startTime,
 		Ptr<OutputStreamWrapper> fctFile, Ptr<OutputStreamWrapper> counterFile, Ptr<OutputStreamWrapper> flowsFile,
@@ -481,7 +505,7 @@ void sendSwiftTraffic(std::unordered_map<uint64_t, std::vector<Ptr<Node>>> rtt_t
 		uint16_t dport = randomFromVector<uint16_t>(availablePorts);
 
 		//Get Flow size sample
-		uint64_t flowSize = random_size->GetInteger(1000,50000);
+		uint64_t flowSize = random_size->GetInteger(1000,500000);
 
 		startTime += interArrivalTime(gen);
 
@@ -507,7 +531,7 @@ void sendBindTest(Ptr<Node> src, NodeContainer receivers, std::unordered_map<std
 		Ptr<Node> dst  = receivers.Get(random_variable->GetInteger(0, receivers.GetN()-1));
 		std::vector<uint16_t> availablePorts = hostsToPorts[GetNodeName(dst)];
 		uint16_t dport = randomFromVector<uint16_t>(availablePorts);
-		installBulkSend(src, dst, dport, 1500, 1);
+		installBulkSend(src, dst, dport, 500000, random_variable->GetValue(1, 20));
 
 	}
 

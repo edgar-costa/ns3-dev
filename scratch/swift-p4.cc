@@ -478,10 +478,10 @@ main (int argc, char *argv[])
 //  Ptr<Socket> sock = installSimpleSend(GetNode("s_40"), GetNode("d_31"), randomFromVector(hostToPort["d_31"]), DataRate("100Mbps"), 10, "TCP");
 
 
-//  sendBindTest(GetNode("s_36"), receivers, hostToPort, 16400);
+  sendBindTest(GetNode("s_36"), receivers, hostToPort, 36400);
 
 
-  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "swift_datasets/rtt.txt", "swift_datasets/netflow.flows",runStep ,flowsPersec, 5);
+//  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "swift_datasets/rtt.txt", "swift_datasets/netflow.flows",runStep ,flowsPersec, 5);
 
   //Senders function
 

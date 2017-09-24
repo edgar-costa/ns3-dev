@@ -236,6 +236,10 @@ void RateSendApplication::RefillBucket(void){
     	m_refillEvent = Simulator::Schedule (Seconds(1), &RateSendApplication::RefillBucket, this);
   }
 
+  if (m_sendingData == false){
+  	SendData();
+  }
+
 }
 
 void RateSendApplication::SendData (void)
@@ -243,6 +247,14 @@ void RateSendApplication::SendData (void)
   NS_LOG_FUNCTION (this);
   m_sendingData = true;
 
+  if (m_sendingData == false){
+  	m_sendingData = true;
+  }
+  else{
+
+  	NS_LOG_DEBUG("Trying to run send data when it is already running");
+  	return;
+  }
 
   while (m_bytesInBucket > 0)
     { // Time to send more
@@ -274,13 +286,14 @@ void RateSendApplication::SendData (void)
         }
    }
 
-	m_sendingData = false;
-
 	// Check if time to close (all sent)
   if (m_totBytes == m_maxBytes && m_connected) //&& (GetTxBufferSize() == 0))
     {
   		StopApplication();
     }
+
+	m_sendingData = false;
+
 }
 
 
