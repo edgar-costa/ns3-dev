@@ -339,7 +339,9 @@ void CustomBulkApplication::DataSend (Ptr<Socket>, uint32_t)
   NS_LOG_FUNCTION (this);
 
   if (m_connected)
-    { // Only send new data if the connection has completed
+    {
+  	// Only send new data if the connection has completed
+
       SendData ();
     }
 }

@@ -225,7 +225,7 @@ void RateSendApplication::RefillBucket(void){
   NS_LOG_FUNCTION (this);
 
   //Adds bytes into the bucket.
-  m_bytesInBucket += std::min(m_bytesPerSec, (m_maxBytes - m_totBytes));
+  m_bytesInBucket +=  std::min(m_bytesPerSec, (m_maxBytes - m_totBytes));
 
   //if we reached total bytes to send bucked is not refilled.
   if (m_maxBytes != m_totBytes){
@@ -290,10 +290,6 @@ void RateSendApplication::SendData (void)
 	m_sendingData = false;
 
 }
-
-
-
-
 
 
 void RateSendApplication::ConnectionSucceeded (Ptr<Socket> socket)
