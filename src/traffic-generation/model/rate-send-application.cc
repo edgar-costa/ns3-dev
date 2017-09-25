@@ -84,7 +84,8 @@ RateSendApplication::RateSendApplication ()
     m_connected (false),
     m_totBytes (0),
 		m_bytesInBucket(0),
-		m_startTime(0)
+		m_startTime(0),
+		m_sendingData(false)
 {
   NS_LOG_FUNCTION (this);
 }
@@ -197,11 +198,6 @@ void RateSendApplication::StartApplication (void) // Called at time specified by
 
     }
 
-  if (m_connected)
-    {
-  		RefillBucket();
-      SendData ();
-    }
 }
 
 
@@ -245,7 +241,6 @@ void RateSendApplication::RefillBucket(void){
 void RateSendApplication::SendData (void)
 {
   NS_LOG_FUNCTION (this);
-  m_sendingData = true;
 
   if (m_sendingData == false){
   	m_sendingData = true;
@@ -256,7 +251,7 @@ void RateSendApplication::SendData (void)
   	return;
   }
 
-  while (m_bytesInBucket > 0)
+  while (m_bytesInBucket > 0 and m_maxBytes != m_totBytes)
     { // Time to send more
 
       // uint64_t to allow the comparison later.
@@ -306,7 +301,9 @@ void RateSendApplication::ConnectionSucceeded (Ptr<Socket> socket)
   NS_LOG_FUNCTION (this << socket);
   NS_LOG_LOGIC ("RateSendApplication Connection succeeded");
   m_connected = true;
+	RefillBucket();
   SendData ();
+//  SendData ();
 }
 
 void RateSendApplication::ConnectionFailed (Ptr<Socket> socket)
