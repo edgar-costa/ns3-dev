@@ -87,28 +87,40 @@ void installOnOffSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, Data
 
 }
 
-void installRateSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint64_t max_size, double duration, double startTime){
+void installRateSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint32_t n_packets, uint64_t max_size, double duration, double startTime){
 
   Ipv4Address addr = GetNodeIp(dstHost);
   Address sinkAddress (InetSocketAddress (addr, dport));
 
   Ptr<RateSendApplication> rate_send_app =  CreateObject<RateSendApplication>();
 
+
   rate_send_app->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
   rate_send_app->SetAttribute("Remote", AddressValue(sinkAddress));
-  rate_send_app->SetAttribute("MaxBytes", UintegerValue(max_size));
+
+  double avg_size_per_packet;
+  double interval_duration;
 
   if (duration <= 0){
   	duration = 1;
   }
 
-  double interval_duration;
+  max_size = max_size - (n_packets * 54);
 
-  uint64_t bytes_per_sec  = max_size/duration;
 
-  rate_send_app->SetAttribute("BytesPerInterval", UintegerValue(bytes_per_sec));
+  double bytes_per_sec = max_size / duration;
+
+  avg_size_per_packet = double(max_size) / n_packets;
+
+  interval_duration = avg_size_per_packet / bytes_per_sec;
+
+  uint64_t bytes_per_period = uint64_t(avg_size_per_packet);
+
+  NS_LOG_UNCOND(bytes_per_sec << " " <<  avg_size_per_packet << " " << interval_duration);
+
+  rate_send_app->SetAttribute("MaxBytes", UintegerValue(max_size));
+  rate_send_app->SetAttribute("BytesPerInterval", UintegerValue(bytes_per_period));
   rate_send_app->SetAttribute("IntervalDuration", DoubleValue(interval_duration));
-
 
   srcHost->AddApplication(rate_send_app);
   rate_send_app->SetStartTime(Seconds(startTime));

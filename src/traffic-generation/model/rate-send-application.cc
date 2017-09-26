@@ -32,12 +32,13 @@
 #include "rate-send-application.h"
 #include "ns3/utils-module.h"
 
+#define TCP_HEADER_SIZE = 54;
+
 namespace ns3 {
 
 NS_LOG_COMPONENT_DEFINE ("rate-send-app");
 
 NS_OBJECT_ENSURE_REGISTERED (RateSendApplication);
-
 
 TypeId
 RateSendApplication::GetTypeId (void)
@@ -47,7 +48,7 @@ RateSendApplication::GetTypeId (void)
     .SetGroupName("Applications") 
     .AddConstructor<RateSendApplication> ()
     .AddAttribute ("SendSize", "The amount of data to send each time.",
-                   UintegerValue (512),
+                   UintegerValue (2048),
                    MakeUintegerAccessor (&RateSendApplication::m_sendSize),
                    MakeUintegerChecker<uint32_t> (1))
     .AddAttribute ("Remote", "The address of the destination",
@@ -271,7 +272,7 @@ void RateSendApplication::SendData (void)
       int actual = m_socket->Send (packet);
       if (actual > 0)
         {
-          m_totBytes += actual;
+          m_totBytes += (actual);
           m_bytesInBucket -= actual;
           m_txTrace (packet);
         }
