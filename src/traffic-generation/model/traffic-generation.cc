@@ -96,12 +96,19 @@ void installRateSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint6
 
   rate_send_app->SetAttribute("Protocol", TypeIdValue(TcpSocketFactory::GetTypeId()));
   rate_send_app->SetAttribute("Remote", AddressValue(sinkAddress));
-
   rate_send_app->SetAttribute("MaxBytes", UintegerValue(max_size));
+
+  if (duration <= 0){
+  	duration = 1;
+  }
+
+  double interval_duration;
 
   uint64_t bytes_per_sec  = max_size/duration;
 
-  rate_send_app->SetAttribute("BytesPerSec", UintegerValue(bytes_per_sec));
+  rate_send_app->SetAttribute("BytesPerInterval", UintegerValue(bytes_per_sec));
+  rate_send_app->SetAttribute("IntervalDuration", DoubleValue(interval_duration));
+
 
   srcHost->AddApplication(rate_send_app);
   rate_send_app->SetStartTime(Seconds(startTime));

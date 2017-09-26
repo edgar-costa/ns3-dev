@@ -1514,7 +1514,7 @@ TcpSocketBase::ReadOptions (const TcpHeader &tcpHeader, bool &scoreboardUpdated)
       switch (option->GetKind ())
         {
         case TcpOption::SACK:
-          scoreboardUpdated = ProcessOptionSack (option);
+          //scoreboardUpdated = ProcessOptionSack (option);
           break;
         default:
           continue;

@@ -62,11 +62,16 @@ RateSendApplication::GetTypeId (void)
                    UintegerValue (0),
                    MakeUintegerAccessor (&RateSendApplication::m_maxBytes),
                    MakeUintegerChecker<uint64_t> ())
-	  .AddAttribute ("BytesPerSec",
+	  .AddAttribute ("BytesPerInterval",
 									 "Bytes the app is allowed to send every second. ",
 									 UintegerValue (0),
-									 MakeUintegerAccessor (&RateSendApplication::m_bytesPerSec),
+									 MakeUintegerAccessor (&RateSendApplication::m_bytesPerInterval),
 									 MakeUintegerChecker<uint64_t> ())
+		.AddAttribute("IntervalDuration",
+									"Filling the bucked periodicity",
+									DoubleValue(1),
+									MakeDoubleAccessor(&RateSendApplication::m_intervalDuration),
+									MakeDoubleChecker<double>())
 	 .AddAttribute ("Protocol", "The type of protocol to use.",
                    TypeIdValue (TcpSocketFactory::GetTypeId ()),
                    MakeTypeIdAccessor (&RateSendApplication::m_tid),
@@ -225,11 +230,11 @@ void RateSendApplication::RefillBucket(void){
   NS_LOG_FUNCTION (this);
 
   //Adds bytes into the bucket.
-  m_bytesInBucket +=  std::min(m_bytesPerSec, (m_maxBytes - m_totBytes));
+  m_bytesInBucket +=  std::min(m_bytesPerInterval, (m_maxBytes - m_totBytes));
 
   //if we reached total bytes to send bucked is not refilled.
   if (m_maxBytes != m_totBytes){
-    	m_refillEvent = Simulator::Schedule (Seconds(1), &RateSendApplication::RefillBucket, this);
+    	m_refillEvent = Simulator::Schedule (Seconds(m_intervalDuration), &RateSendApplication::RefillBucket, this);
   }
 
   if (m_sendingData == false){

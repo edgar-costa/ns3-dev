@@ -492,6 +492,8 @@ main (int argc, char *argv[])
   //p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
 //  p2p.EnablePcap(fileNameRoot, links["s_40->sw1"].Get(0), bool(1));
 
+  printNow(0.5);
+
   Simulator::Stop (Seconds (500));
   Simulator::Run ();
   Simulator::Destroy ();

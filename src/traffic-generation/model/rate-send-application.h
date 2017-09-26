@@ -135,7 +135,8 @@ private:
 	bool m_connected;    //!< True if connected
 	uint32_t m_sendSize;     //!< Size of data to send each time
 	uint64_t m_maxBytes;     //!< Limit total number of bytes sent
-	uint64_t m_bytesPerSec;     //!< Limit total number of bytes sent
+	uint64_t m_bytesPerInterval;     //!< Limit total number of bytes sent
+	double   m_intervalDuration;
 	uint64_t m_totBytes;     //!< Total bytes sent so far
 	uint64_t m_bytesInBucket;
 	TypeId m_tid;          //!< The type of protocol to use.
