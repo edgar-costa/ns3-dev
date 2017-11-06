@@ -107,7 +107,6 @@ void installRateSend(Ptr<Node> srcHost, Ptr<Node> dstHost, uint16_t dport, uint3
 
   max_size = max_size - (n_packets * 54);
 
-
   double bytes_per_sec = max_size / duration;
 
   avg_size_per_packet = double(max_size) / n_packets;
