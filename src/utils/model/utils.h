@@ -14,7 +14,6 @@
 #include "ns3/point-to-point-module.h"
 
 
-
 namespace ns3 {
 
 /* ... */

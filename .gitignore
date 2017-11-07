@@ -46,3 +46,7 @@ build/
 
 .project
 .settings/
+
+old_tests/
+outputs/
+swift_datasets/
