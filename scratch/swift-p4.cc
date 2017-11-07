@@ -472,14 +472,12 @@ main (int argc, char *argv[])
 //  NS_LOG_UNCOND("we got a delay of: " << time_test.Get().GetSeconds());
 
 
-
   std::unordered_map <std::string, std::vector<uint16_t>> hostToPort = installSinks(receivers, 500, 0 , "TCP");
 
 //  Ptr<Socket> sock = installSimpleSend(GetNode("s_40"), GetNode("d_31"), randomFromVector(hostToPort["d_31"]), DataRate("100Mbps"), 10, "TCP");
 
 
   sendBindTest(GetNode("s_36"), receivers, hostToPort, 36400);
-
 
 //  sendSwiftTraffic(senders_latency_to_node, receivers_latency_to_node, hostToPort, "swift_datasets/rtt.txt", "swift_datasets/netflow.flows",runStep ,flowsPersec, 5);
 
@@ -489,7 +487,7 @@ main (int argc, char *argv[])
   //TRACES
 
   ///////////////////
-  //p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
+  p2p.EnablePcap(fileNameRoot, links[GetNodeName(sw1)+"->"+GetNodeName(sw2)].Get(0), bool(1));
 //  p2p.EnablePcap(fileNameRoot, links["s_40->sw1"].Get(0), bool(1));
 
   printNow(0.5);

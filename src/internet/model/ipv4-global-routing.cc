@@ -41,7 +41,7 @@
 #include "ns3/integer.h"
 #include "ns3/pointer.h"
 #include "ns3/queue.h"
-#include "ns3/utils.h"
+//#include "ns3/utils.h"
 
 
 namespace ns3 {
@@ -53,6 +53,7 @@ NS_OBJECT_ENSURE_REGISTERED (Ipv4GlobalRouting);
 const uint8_t TCP_PROT_NUMBER = 6;
 const uint8_t UDP_PROT_NUMBER = 17;
 
+Ptr<UniformRandomVariable> random_variable = CreateObject<UniformRandomVariable> ();
 
 TypeId 
 Ipv4GlobalRouting::GetTypeId (void)
@@ -628,7 +629,10 @@ Ipv4GlobalRouting::LookupGlobal (const Ipv4Header &header, Ptr<const Packet> ipP
 						selectIndex = 0;
 
 						uint32_t numNextHops = allRoutes.size();
-						std::string dstAddr = ipv4AddressToString(header.GetDestination());
+
+						std::stringstream ip;
+						ip << header.GetDestination();
+						std::string dstAddr = ip.str();
 
 						std::unordered_set<uint32_t> previousBestOuts = m_drill_table[dstAddr];
 
