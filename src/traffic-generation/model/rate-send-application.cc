@@ -330,7 +330,6 @@ void RateSendApplication::SocketNormalClose (Ptr<Socket>)
 
   NS_LOG_DEBUG("Connection closed normally");
 
-  double endTime  = Simulator::Now().GetSeconds();
 
 }
 
